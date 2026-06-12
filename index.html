@@ -462,8 +462,7 @@
       const canPickup = nearCaught && nearCaughtDist < 2.0;
 
       // drop at fresh-kill pile (camp centre ~0,1)
-      const toCampX = player.x, toCampZ = player.z - 1;
-      const atPile = carrying && Math.sqrt(toCampX*toCampX + toCampZ*toCampZ) < 4;
+      const atPile = Math.sqrt(player.x*player.x + (player.z-1)*(player.z-1)) < 4;
 
       // F key
       if (keys['f'] && !player._fPressed) {
