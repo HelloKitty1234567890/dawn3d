@@ -34,6 +34,53 @@
   </style>
 </head>
 <body>
+
+  <!-- ── title / role selection screen ── -->
+  <div id="title-screen" style="
+    position:fixed;inset:0;z-index:100;
+    background:radial-gradient(ellipse at center, #0d1a0a 0%, #050d04 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:Georgia,serif;color:#e8d5a3;text-align:center;">
+
+    <div style="font-size:13px;letter-spacing:6px;color:#8a7050;margin-bottom:8px;">INTO THE WILD</div>
+    <div style="font-size:52px;font-weight:bold;text-shadow:0 0 30px #4a8a30, 0 0 60px #2a5a18;margin-bottom:4px;">ThunderClan</div>
+    <div style="font-size:16px;letter-spacing:3px;color:#a89060;margin-bottom:50px;">WARRIORS</div>
+
+    <div style="font-size:17px;color:#c8b888;margin-bottom:36px;">Who will you be?</div>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap;justify-content:center;">
+
+      <button onclick="chooseRole('warrior')" style="
+        background:linear-gradient(160deg,#2a1a0a,#1a0f05);
+        border:2px solid #8a6030;border-radius:12px;
+        padding:28px 36px;cursor:pointer;color:#e8d5a3;
+        font-family:Georgia,serif;width:220px;
+        transition:all 0.2s;text-align:center;"
+        onmouseover="this.style.borderColor='#c8902a';this.style.boxShadow='0 0 20px #8a601088'"
+        onmouseout="this.style.borderColor='#8a6030';this.style.boxShadow='none'">
+        <div style="font-size:36px;margin-bottom:10px;">⚔️</div>
+        <div style="font-size:20px;font-weight:bold;margin-bottom:8px;">Warrior</div>
+        <div style="font-size:13px;color:#a89060;line-height:1.5;">Hunt prey, protect the clan, and fight for ThunderClan's honour</div>
+      </button>
+
+      <button onclick="chooseRole('medicine')" style="
+        background:linear-gradient(160deg,#0a1f0a,#05120a);
+        border:2px solid #306830;border-radius:12px;
+        padding:28px 36px;cursor:pointer;color:#e8d5a3;
+        font-family:Georgia,serif;width:220px;
+        transition:all 0.2s;text-align:center;"
+        onmouseover="this.style.borderColor='#50c850';this.style.boxShadow='0 0 20px #30882888'"
+        onmouseout="this.style.borderColor='#306830';this.style.boxShadow='none'">
+        <div style="font-size:36px;margin-bottom:10px;">🌿</div>
+        <div style="font-size:20px;font-weight:bold;margin-bottom:8px;">Medicine Cat</div>
+        <div style="font-size:13px;color:#a89060;line-height:1.5;">Gather herbs, heal your clanmates, and walk with StarClan</div>
+      </button>
+
+    </div>
+
+    <div style="margin-top:48px;font-size:12px;color:#506040;letter-spacing:2px;">CLICK YOUR PATH TO BEGIN</div>
+  </div>
+
   <div id="ui">⚔️ ThunderClan Territory</div>
   <div id="prey-prompt" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
     color:#f5e06a;font-family:Georgia,serif;font-size:22px;text-shadow:1px 1px 6px #000;
@@ -52,6 +99,24 @@
     </div>
   </div>
   <div id="controls">W A S D · Mouse to look · Shift to crouch · Space to pounce</div>
+
+  <script>
+    let playerRole = null;
+
+    function chooseRole(role) {
+      playerRole = role;
+      document.getElementById('title-screen').style.display = 'none';
+      canvas.requestPointerLock();
+      if (role === 'warrior') {
+        document.getElementById('ui').textContent = '⚔️ ThunderClan — Warrior';
+        document.getElementById('controls').textContent = 'W A S D · Mouse to look · Shift to crouch · Space to pounce · F to pick up · E to eat';
+      } else {
+        document.getElementById('ui').textContent = '🌿 ThunderClan — Medicine Cat';
+        document.getElementById('controls').textContent = 'W A S D · Mouse to look · F to gather herbs · H to heal a clanmate';
+        document.getElementById('kills').textContent = 'Herbs: 0';
+      }
+    }
+  </script>
 
   <script>
     // ── tiny 3D engine from scratch ──────────────────────────────────────────
@@ -345,6 +410,22 @@
       });
     }
 
+    // herbs — for medicine cat to gather
+    const herbTypes = [
+      { name:'marigold',  r:0.85, g:0.55, b:0.08 },
+      { name:'catmint',   r:0.55, g:0.48, b:0.80 },
+      { name:'cobweb',    r:0.88, g:0.88, b:0.88 },
+      { name:'borage',    r:0.25, g:0.35, b:0.75 },
+    ];
+    function spawnHerb() {
+      const angle = RNG() * Math.PI * 2;
+      const dist  = 9 + RNG() * 32;
+      const t = herbTypes[Math.floor(RNG() * herbTypes.length)];
+      return { x: Math.cos(angle)*dist, z: Math.sin(angle)*dist, ...t, gathered: false, respawnTimer: 0 };
+    }
+    const herbs = Array.from({length: 20}, spawnHerb);
+    let herbCount = 0;
+
     // ── camp structures ──────────────────────────────────────────────────────
 
     // bramble wall: oval ring of rough thorn clumps
@@ -371,6 +452,9 @@
       { name:'Brightheart',x: 2,   z: 3,   yaw: Math.PI,    r:0.82, g:0.72, b:0.62 }, // white/ginger
       { name:'Brackenfur', x:-2,   z: 3,   yaw: Math.PI*0.9,r:0.55, g:0.40, b:0.18 }, // golden-brown
     ];
+
+    // give clanmates health so medicine cat can heal them
+    for (const c of clanmates) c.health = 40 + Math.random() * 60;
 
     // ── prey ─────────────────────────────────────────────────────────────────
 
@@ -424,6 +508,9 @@
     function frame(ts) {
       const dt = Math.min((ts - last) / 1000, 0.05);
       last = ts;
+
+      // don't process gameplay until role chosen
+      if (!playerRole) { requestAnimationFrame(frame); return; }
 
       // crouch
       player.crouching = !!(keys['shift'] || keys['shiftleft'] || keys['shiftright']);
@@ -485,8 +572,16 @@
         if (dist < nearDist) { nearDist = dist; nearPrey = p; }
       }
 
-      // pounce!
-      const canPounce = nearPrey && nearDist < 2.5;
+      // ── medicine cat: herb respawn ───────────────────────────────────────
+      for (const h of herbs) {
+        if (h.gathered) {
+          h.respawnTimer -= dt;
+          if (h.respawnTimer <= 0) Object.assign(h, spawnHerb());
+        }
+      }
+
+      // pounce! (warrior only)
+      const canPounce = playerRole==='warrior' && nearPrey && nearDist < 2.5;
       if (canPounce && (keys['space'] || keys[' ']) && !player._pounced) {
         nearPrey.caught = true;
         nearPrey.catchX = nearPrey.x;
@@ -538,13 +633,51 @@
       }
       if (!keys['e']) player._ePressed = false;
 
+      // ── medicine cat: gather herbs + heal clanmates ──────────────────────
+      let nearHerb = null, nearHerbDist = 99;
+      let nearClanmate = null, nearClanmateDist = 99;
+      if (playerRole === 'medicine') {
+        for (const h of herbs) {
+          if (h.gathered) continue;
+          const hd = Math.hypot(player.x - h.x, player.z - h.z);
+          if (hd < nearHerbDist) { nearHerbDist = hd; nearHerb = h; }
+        }
+        for (const c of clanmates) {
+          const cd = Math.hypot(player.x - c.x, player.z - c.z);
+          if (cd < nearClanmateDist) { nearClanmateDist = cd; nearClanmate = c; }
+        }
+        // gather herb with F
+        if (nearHerb && nearHerbDist < 2.0 && keys['f'] && !player._fPressed) {
+          nearHerb.gathered = true;
+          nearHerb.respawnTimer = 20;
+          herbCount++;
+          document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
+          player._fPressed = true;
+        }
+        // heal clanmate with H
+        if (nearClanmate && nearClanmateDist < 2.5 && herbCount > 0 && nearClanmate.health < 99 && keys['h'] && !player._hPressed) {
+          nearClanmate.health = Math.min(100, nearClanmate.health + 40);
+          herbCount--;
+          document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
+          player._hPressed = true;
+        }
+        if (!keys['h']) player._hPressed = false;
+      }
+
       // prompt text
       const prompt = document.getElementById('prey-prompt');
-      if      (canPounce)  { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
-      else if (canPickup)  { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
-      else if (carrying && atPile) { prompt.style.display='block'; prompt.textContent='🐾 Press F to add to pile!'; }
-      else if (canEat)     { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
-      else                 { prompt.style.display='none'; }
+      if (playerRole === 'warrior') {
+        if      (canPounce)        { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
+        else if (canPickup)        { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
+        else if (carrying && atPile){ prompt.style.display='block'; prompt.textContent='🐾 Press F to add to pile!'; }
+        else if (canEat)           { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
+        else                       { prompt.style.display='none'; }
+      } else {
+        if      (nearHerb && nearHerbDist < 2.0)                              { prompt.style.display='block'; prompt.textContent='🌿 Press F to gather ' + nearHerb.name + '!'; }
+        else if (nearClanmate && nearClanmateDist < 2.5 && herbCount > 0 && nearClanmate.health < 99) { prompt.style.display='block'; prompt.textContent='💚 Press H to heal ' + nearClanmate.name + '!'; }
+        else if (nearClanmate && nearClanmateDist < 2.5 && herbCount === 0)   { prompt.style.display='block'; prompt.textContent='🌿 Find more herbs first!'; }
+        else                                                                   { prompt.style.display='none'; }
+      }
 
       // camera — just behind and above the cat
       const camH = player.crouching ? 1.0 : 2.2;
@@ -598,6 +731,18 @@
       if (pileCount > 1) drawMesh(box, makeModel( 0.2, ph*0.5-0.35, 1.4, 0.5, ph*0.7, 0.4), 0.42, 0.30, 0.18);
       if (pileCount > 3) drawMesh(box, makeModel(-0.2, ph*0.5-0.32, 0.9, 0.4, ph*0.5, 0.35), 0.38, 0.26, 0.15);
       if (pileCount > 5) drawMesh(box, makeModel( 0.6, ph*0.5-0.30, 0.7, 0.35,ph*0.4, 0.30), 0.44, 0.32, 0.18);
+
+      // ── herbs (medicine cat) ─────────────────────────────────────────────
+      for (const h of herbs) {
+        if (h.gathered) continue;
+        // little plant: stem + two leaf fans + flower on top
+        drawMesh(cyl, makeModel(h.x, -0.28, h.z, 0.03, 0.24, 0.03), 0.25, 0.45, 0.15);
+        drawMesh(box, makeModel(h.x, -0.22, h.z, 0.22, 0.04, 0.08), 0.22, 0.50, 0.14);
+        drawMesh(box, makeModel(h.x, -0.18, h.z, 0.08, 0.04, 0.22), 0.22, 0.50, 0.14);
+        // coloured flower head matching herb type
+        drawMesh(cone, makeModel(h.x, -0.08, h.z, 0.12, 0.12, 0.12), h.r, h.g, h.b);
+        drawMesh(box,  makeModel(h.x, -0.03, h.z, 0.07, 0.07, 0.07), h.r, h.g*1.1, h.b);
+      }
 
       // draw a cat — used for clanmates and player
       function drawCat(x, bY, z, yaw, r, g, b, swing=0, bH=0.26, hFwd=0.52, hY=0.42) {
