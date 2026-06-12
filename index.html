@@ -621,8 +621,6 @@
           }
           player._fPressed = true;
         }
-        if (!keys['f']) player._fPressed = false;
-
         const canEat = atPile && pileCount > 0 && hunger < 99;
         if (keys['e'] && !player._ePressed && canEat) {
           pileCount--;
@@ -631,6 +629,7 @@
           player._ePressed = true;
         }
       }
+      if (!keys['f']) player._fPressed = false;
       if (!keys['e']) player._ePressed = false;
 
       // ── medicine cat: gather herbs + heal clanmates ──────────────────────
