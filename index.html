@@ -614,9 +614,11 @@
           const distToPlayer = Math.hypot(pdx, pdz);
           const canSee = distToPlayer < 10 && !player.crouching;
 
+          // stop chasing if player escapes back to ThunderClan territory
+          const playerInSafety = Math.hypot(player.x, player.z) < 42;
           if (canSee) {
             p.chasing = true;
-          } else if (distToPlayer > 18) {
+          } else if (distToPlayer > 22 || playerInSafety) {
             p.chasing = false;
           }
 
