@@ -37,7 +37,7 @@
   <div id="ui">⚔️ ThunderClan Territory</div>
   <div id="prey-prompt" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
     color:#f5e06a;font-family:Georgia,serif;font-size:22px;text-shadow:1px 1px 6px #000;
-    pointer-events:none;display:none;">🐾 Press SPACE to pounce!</div>
+    pointer-events:none;display:none;"></div>
   <div id="kills" style="position:fixed;top:16px;right:20px;color:#e8d5a3;
     font-family:Georgia,serif;font-size:16px;text-shadow:1px 1px 4px #000;pointer-events:none;">
     Fresh-kill: 0</div>
@@ -342,6 +342,7 @@
 
     const prey = Array.from({length: 12}, spawnPrey);
     let killCount = 0;
+    let carrying = null; // prey being carried
 
     // ── player ───────────────────────────────────────────────────────────────
 
@@ -435,7 +436,42 @@
       }
       if (!keys['space'] && !keys[' ']) player._pounced = false;
 
-      document.getElementById('prey-prompt').style.display = canPounce ? 'block' : 'none';
+      // find nearest caught (flipped) prey to pick up
+      let nearCaught = null, nearCaughtDist = 99;
+      if (!carrying) {
+        for (const p of prey) {
+          if (!p.caught) continue;
+          const dx2 = player.x - p.catchX, dz2 = player.z - p.catchZ;
+          const d = Math.sqrt(dx2*dx2 + dz2*dz2);
+          if (d < nearCaughtDist) { nearCaughtDist = d; nearCaught = p; }
+        }
+      }
+      const canPickup = nearCaught && nearCaughtDist < 2.0;
+
+      // drop at fresh-kill pile (camp centre ~0,1)
+      const toCampX = player.x, toCampZ = player.z - 1;
+      const atPile = carrying && Math.sqrt(toCampX*toCampX + toCampZ*toCampZ) < 4;
+
+      // F key
+      if (keys['f'] && !player._fPressed) {
+        if (carrying && atPile) {
+          // drop at pile
+          carrying.caught = false;
+          Object.assign(carrying, spawnPrey());
+          carrying = null;
+        } else if (canPickup) {
+          carrying = nearCaught;
+        }
+        player._fPressed = true;
+      }
+      if (!keys['f']) player._fPressed = false;
+
+      // prompt text
+      const prompt = document.getElementById('prey-prompt');
+      if (canPounce)       { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
+      else if (canPickup)  { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
+      else if (atPile)     { prompt.style.display='block'; prompt.textContent='🐾 Press F to drop at pile!'; }
+      else                 { prompt.style.display='none'; }
 
       // camera — just behind and above the cat
       const camH = player.crouching ? 1.0 : 2.2;
@@ -569,6 +605,21 @@
       drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08-swing,  0.22, ls,lh,ls), cr,cg,cb);
       drawMesh(box, makeModelR(px,cy,pz, yaw,-0.18, 0.08-swing, -0.22, ls,lh,ls), cr,cg,cb);
       drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08+swing, -0.22, ls,lh,ls), cr,cg,cb);
+
+      // carried prey dangles from mouth
+      if (carrying) {
+        const s  = carrying.type==='rabbit' ? 1.4 : 0.7;
+        const pr = carrying.type==='rabbit' ? 0.62 : 0.32;
+        const pg = carrying.type==='rabbit' ? 0.55 : 0.28;
+        const pb = carrying.type==='rabbit' ? 0.45 : 0.20;
+        // hang just in front of and below the head
+        drawMesh(box, makeModelR(px,cy,pz, yaw, 0, headY-0.15, headFwd+0.22, 0.28*s,0.14*s,0.35*s), pr,pg,pb);
+        // little legs dangling
+        drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
+        drawMesh(box, makeModelR(px,cy,pz, yaw, 0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
+        drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.28, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
+        drawMesh(box, makeModelR(px,cy,pz, yaw, 0.07*s, headY-0.24, headFwd+0.28, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
+      }
 
       requestAnimationFrame(frame);
     }
