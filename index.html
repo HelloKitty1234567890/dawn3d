@@ -609,6 +609,7 @@
       // ── patrol AI ────────────────────────────────────────────────────────
       for (const clan of enemyClans) {
         for (const p of clan.patrols) {
+          if (p === mate) continue; // mate follows player instead
           const pdx = player.x - p.x, pdz = player.z - p.z;
           const distToPlayer = Math.hypot(pdx, pdz);
           const canSee = distToPlayer < 10 && !player.crouching;
