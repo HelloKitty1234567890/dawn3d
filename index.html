@@ -136,7 +136,7 @@
       len=Math.sqrt(rx*rx+ry*ry+rz*rz);
       rx/=len; ry/=len; rz/=len;
       // up = (0,1,0)
-      let ux=fy*rz-fz*ry, uy=fz*rx-fx*rz, uz=fx*ry-fy*rx;
+      let ux=ry*fz-rz*fy, uy=rz*fx-rx*fz, uz=rx*fy-ry*fx;
       m[0]=rx; m[1]=ux; m[2]=-fx; m[3]=0;
       m[4]=ry; m[5]=uy; m[6]=-fy; m[7]=0;
       m[8]=rz; m[9]=uz; m[10]=-fz; m[11]=0;
