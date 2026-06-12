@@ -97,6 +97,10 @@
       <div id="hunger-bar" style="width:100%;height:100%;background:#c8702a;transition:width 0.3s;"></div>
     </div>
   </div>
+  <div id="territory-warn" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);
+    background:rgba(80,0,0,0.70);border:2px solid #c03030;border-radius:10px;
+    padding:8px 24px;color:#ffccaa;font-family:Georgia,serif;font-size:18px;
+    text-shadow:1px 1px 4px #000;pointer-events:none;text-align:center;"></div>
   <div id="carry-badge" style="display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);
     background:rgba(0,0,0,0.65);border:2px solid #c8902a;border-radius:12px;
     padding:10px 22px;color:#f5e06a;font-family:Georgia,serif;font-size:20px;
@@ -459,6 +463,62 @@
     // give clanmates health so medicine cat can heal them
     for (const c of clanmates) c.health = 40 + Math.random() * 60;
 
+    // ── enemy clans ───────────────────────────────────────────────────────────
+    // map layout: ThunderClan=centre, ShadowClan=SE, WindClan=N, RiverClan=W
+    const enemyClans = [
+      {
+        name: 'ShadowClan',
+        cx: 55, cz: 55,          // camp centre
+        color: [0.12, 0.12, 0.14], // very dark
+        groundColor: [0.10, 0.12, 0.08],
+        warning: '🌑 ShadowClan territory!',
+        // patrol cats
+        patrols: [
+          { x:52, z:52, yaw:0, r:0.10,g:0.10,b:0.12 },
+          { x:60, z:48, yaw:1, r:0.15,g:0.12,b:0.10 },
+          { x:48, z:60, yaw:2, r:0.12,g:0.10,b:0.14 },
+          { x:58, z:58, yaw:3, r:0.08,g:0.08,b:0.10 },
+        ],
+      },
+      {
+        name: 'WindClan',
+        cx: 0, cz: -65,
+        color: [0.72, 0.65, 0.45], // sandy/pale
+        groundColor: [0.30, 0.28, 0.18],
+        warning: '🌬️ WindClan territory!',
+        patrols: [
+          { x: 0,  z:-62, yaw:0, r:0.75,g:0.68,b:0.48 },
+          { x: 8,  z:-68, yaw:2, r:0.65,g:0.60,b:0.40 },
+          { x:-8,  z:-58, yaw:4, r:0.80,g:0.72,b:0.52 },
+          { x: 4,  z:-72, yaw:1, r:0.70,g:0.62,b:0.42 },
+        ],
+      },
+      {
+        name: 'RiverClan',
+        cx: -65, cz: 0,
+        color: [0.35, 0.45, 0.60], // blue-gray
+        groundColor: [0.15, 0.22, 0.20],
+        warning: '🏞️ RiverClan territory!',
+        patrols: [
+          { x:-62, z: 0,  yaw:0, r:0.38,g:0.48,b:0.62 },
+          { x:-68, z: 8,  yaw:2, r:0.30,g:0.40,b:0.55 },
+          { x:-58, z:-8,  yaw:4, r:0.42,g:0.50,b:0.65 },
+          { x:-72, z: 4,  yaw:1, r:0.35,g:0.45,b:0.58 },
+        ],
+      },
+    ];
+
+    // initialise patrol AI state
+    for (const clan of enemyClans) {
+      for (const p of clan.patrols) {
+        p.wanderTimer = Math.random() * 3;
+        p.chasing = false;
+        p.baseX = p.x; p.baseZ = p.z;
+      }
+    }
+
+    let currentTerritory = 'ThunderClan';
+
     // ── prey ─────────────────────────────────────────────────────────────────
 
     function spawnPrey() {
@@ -527,6 +587,64 @@
       if (keys['a'] || keys['arrowleft']) { player.x += dz*speed*dt; player.z -= dx*speed*dt; moving=true; }
       if (keys['d'] || keys['arrowright']){ player.x -= dz*speed*dt; player.z += dx*speed*dt; moving=true; }
       if (moving) player.walkPhase += dt * (player.crouching ? 4 : 8);
+
+      // ── territory detection ───────────────────────────────────────────────
+      let inEnemyTerritory = null;
+      for (const clan of enemyClans) {
+        const d = Math.hypot(player.x - clan.cx, player.z - clan.cz);
+        if (d < 28) { inEnemyTerritory = clan; break; }
+      }
+      const tWarn = document.getElementById('territory-warn');
+      if (inEnemyTerritory) {
+        tWarn.style.display = 'block';
+        tWarn.textContent = inEnemyTerritory.warning + (player.crouching ? ' 🐾 stay crouched!' : ' ⚠️ they can see you!');
+      } else {
+        tWarn.style.display = 'none';
+      }
+
+      // ── patrol AI ────────────────────────────────────────────────────────
+      for (const clan of enemyClans) {
+        for (const p of clan.patrols) {
+          const pdx = player.x - p.x, pdz = player.z - p.z;
+          const distToPlayer = Math.hypot(pdx, pdz);
+          const canSee = distToPlayer < 10 && !player.crouching;
+
+          if (canSee) {
+            p.chasing = true;
+          } else if (distToPlayer > 18) {
+            p.chasing = false;
+          }
+
+          if (p.chasing) {
+            // chase player
+            p.yaw = Math.atan2(pdx, pdz);
+            const s = 4.5 * dt;
+            p.x += Math.sin(p.yaw) * s;
+            p.z += Math.cos(p.yaw) * s;
+            // deal damage if caught
+            if (distToPlayer < 1.2) {
+              health = Math.max(0, health - 8 * dt);
+              // knock player back
+              player.x -= Math.sin(p.yaw) * 3 * dt;
+              player.z -= Math.cos(p.yaw) * 3 * dt;
+            }
+          } else {
+            // wander near base
+            p.wanderTimer -= dt;
+            if (p.wanderTimer <= 0) {
+              p.yaw += (Math.random() - 0.5) * Math.PI;
+              p.wanderTimer = 2 + Math.random() * 3;
+            }
+            p.x += Math.sin(p.yaw) * 1.2 * dt;
+            p.z += Math.cos(p.yaw) * 1.2 * dt;
+            // drift back to base
+            const bDist = Math.hypot(p.x - p.baseX, p.z - p.baseZ);
+            if (bDist > 14) {
+              p.yaw = Math.atan2(p.baseX - p.x, p.baseZ - p.z);
+            }
+          }
+        }
+      }
 
       // hunger drains slowly
       hunger = Math.max(0, hunger - dt * 0.4);
@@ -792,6 +910,52 @@
       }
 
       for (const c of clanmates) drawCat(c.x, 0, c.z, c.yaw, c.r, c.g, c.b);
+
+      // ── enemy clan camps + patrols ────────────────────────────────────────
+      for (const clan of enemyClans) {
+        const cx = clan.cx, cz = clan.cz;
+        const [gr, gg, gb] = clan.groundColor;
+        const [cr, cg, cb] = clan.color;
+
+        // territory ground patch
+        drawMesh(box, makeModel(cx, -0.43, cz, 70, 0.10, 70), gr, gg, gb);
+
+        // camp clearing
+        drawMesh(box, makeModel(cx, -0.41, cz, 14, 0.08, 12), gr*1.3, gg*1.2, gb*1.1);
+
+        // bramble walls (simple ring)
+        for (let i = 0; i < 16; i++) {
+          const a = (i/16)*Math.PI*2;
+          const bx = cx + Math.cos(a)*7.5, bz = cz + Math.sin(a)*6.5;
+          drawMesh(box, makeModel(bx, 0.1, bz, 0.8, 0.9, 0.6), 0.10,0.15,0.05);
+        }
+
+        // highrock
+        drawMesh(box, makeModel(cx,   0.5, cz-6, 3.2,1.6,2.2), 0.42,0.40,0.36);
+        drawMesh(box, makeModel(cx,   1.3, cz-5.8,2.5,0.5,1.8), 0.48,0.45,0.40);
+
+        // clan-coloured den
+        drawMesh(box, makeModel(cx-5, 0.4, cz-2, 2.8,0.9,1.8), cr,cg,cb);
+        drawMesh(box, makeModel(cx+5, 0.4, cz-2, 2.8,0.9,1.8), cr*0.8,cg*0.8,cb*0.8);
+
+        // border markers — tall dark sticks
+        for (let i = 0; i < 8; i++) {
+          const a = (i/8)*Math.PI*2;
+          const mx = cx + Math.cos(a)*22, mz = cz + Math.sin(a)*22;
+          drawMesh(cyl, makeModel(mx, 0.5, mz, 0.08, 1.2, 0.08), cr+0.1,cg+0.1,cb+0.1);
+        }
+
+        // patrol cats
+        for (const p of clan.patrols) {
+          drawCat(p.x, 0, p.z, p.yaw, p.r, p.g, p.b,
+            p.chasing ? Math.sin(Date.now()*0.015)*0.14 : 0);
+          // glowing eyes if chasing
+          if (p.chasing) {
+            drawMesh(box, makeModelR(p.x,0,p.z, p.yaw,-0.08,0.47,0.55, 0.04,0.04,0.02), 0.90,0.20,0.05);
+            drawMesh(box, makeModelR(p.x,0,p.z, p.yaw, 0.08,0.47,0.55, 0.04,0.04,0.02), 0.90,0.20,0.05);
+          }
+        }
+      }
 
       // ── prey animals ─────────────────────────────────────────────────────
       for (const p of prey) {
