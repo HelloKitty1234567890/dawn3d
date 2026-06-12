@@ -751,74 +751,44 @@
         drawMesh(box,  makeModel(h.x, -0.03, h.z, 0.07, 0.07, 0.07), h.r, h.g*1.1, h.b);
       }
 
-      // draw a cat — chunky realistic proportions
-      function drawCat(x, bY, z, yaw, r, g, b, swing=0, bH=0.30, hFwd=0.48, hY=0.44) {
-        // lighter belly colour
-        const br = Math.min(1,r*1.15+0.08), bg = Math.min(1,g*1.15+0.08), bb = Math.min(1,b*1.15+0.08);
-        // darker point colour (face mask, ears, legs) like the photo
-        const dr = r*0.55, dg = g*0.55, db = b*0.55;
-
-        // ── body: big chunky barrel ───────────────────────────────────────
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.28,  0.00, 0.44,bH,  0.62), r,g,b);   // main barrel
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.24, -0.30, 0.38,bH*0.85,0.40), r,g,b); // rump
-        // fluffy chest puff
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.26,  0.34, 0.36,bH*0.75,0.30), br,bg,bb);
-        // belly — lighter
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.10,  0.02, 0.28,0.10,0.50), br,bg,bb);
-
-        // ── neck: short thick ─────────────────────────────────────────────
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.44,  0.30, 0.26,0.18,0.26), r,g,b);
-        // neck ruff / chest floof
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.40,  0.36, 0.32,0.12,0.32), br,bg,bb);
-
-        // ── head: big round sphere-like (3 overlapping cylinders) ─────────
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY,       hFwd,       0.36,0.34,0.36), r,g,b); // main round
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY+0.04,  hFwd,       0.32,0.28,0.34), r,g,b); // top dome
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY-0.04,  hFwd+0.04,  0.34,0.26,0.32), r,g,b); // chin
-        // dark face mask around eyes (like the photo)
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY+0.02,  hFwd+0.12,  0.28,0.22,0.20), dr,dg,db);
-        // flat pushed-in muzzle (wide and low)
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY-0.07,  hFwd+0.16,  0.22,0.14,0.14), br,bg,bb);
-        // nose — small dark pink
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0, hY-0.04,  hFwd+0.24,  0.05,0.04,0.03), 0.75,0.32,0.38);
-        // eyes — two dark round dots
-        drawMesh(cyl, makeModelR(x,bY,z, yaw,-0.10, hY+0.05, hFwd+0.20, 0.07,0.04,0.07), 0.12,0.08,0.06);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.10, hY+0.05, hFwd+0.20, 0.07,0.04,0.07), 0.12,0.08,0.06);
-        // eye shine — tiny white dot
-        drawMesh(box, makeModelR(x,bY,z, yaw,-0.08, hY+0.07, hFwd+0.23, 0.025,0.025,0.02), 0.90,0.90,0.92);
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0.12, hY+0.07, hFwd+0.23, 0.025,0.025,0.02), 0.90,0.90,0.92);
-
-        // ── ears: small wide-based triangles set far apart ────────────────
-        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.18, hY+0.26, hFwd-0.04, 0.12,0.18,0.10), dr,dg,db);
-        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.18, hY+0.26, hFwd-0.04, 0.12,0.18,0.10), dr,dg,db);
-        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.18, hY+0.24, hFwd-0.04, 0.06,0.12,0.05), 0.75,0.38,0.42);
-        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.18, hY+0.24, hFwd-0.04, 0.06,0.12,0.05), 0.75,0.38,0.42);
-
-        // ── whiskers: long and droopy ─────────────────────────────────────
-        drawMesh(box, makeModelR(x,bY,z, yaw,-0.30, hY-0.06, hFwd+0.16, 0.28,0.010,0.010), 0.92,0.90,0.85);
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0.30, hY-0.06, hFwd+0.16, 0.28,0.010,0.010), 0.92,0.90,0.85);
-        drawMesh(box, makeModelR(x,bY,z, yaw,-0.28, hY-0.10, hFwd+0.14, 0.24,0.010,0.010), 0.92,0.90,0.85);
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0.28, hY-0.10, hFwd+0.14, 0.24,0.010,0.010), 0.92,0.90,0.85);
-        drawMesh(box, makeModelR(x,bY,z, yaw,-0.26, hY-0.14, hFwd+0.12, 0.20,0.010,0.010), 0.92,0.90,0.85);
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0.26, hY-0.14, hFwd+0.12, 0.20,0.010,0.010), 0.92,0.90,0.85);
-
-        // ── tail: thick fluffy, curls up ──────────────────────────────────
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.18, -0.55, 0.10,0.42,0.10), r,g,b);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.50, -0.65, 0.09,0.36,0.09), r,g,b);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.08, 0.76, -0.56, 0.08,0.26,0.08), br,bg,bb);
-
-        // ── legs: short thick with big paws ──────────────────────────────
-        const ls=0.12, lh=0.18;
-        // dark points on legs like the photo
-        drawMesh(cyl, makeModelR(x,bY,z, yaw,-0.19, 0.10+swing,  0.26, ls,  lh,  ls),    dr,dg,db);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.19, 0.10-swing,  0.26, ls,  lh,  ls),    dr,dg,db);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw,-0.19, 0.10-swing, -0.30, ls,  lh*1.1,ls),  dr,dg,db);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.19, 0.10+swing, -0.30, ls,  lh*1.1,ls),  dr,dg,db);
-        // big round paws
-        drawMesh(cyl, makeModelR(x,bY,z, yaw,-0.19,-0.04+swing,  0.26, ls*1.6,0.07,ls*1.8), br,bg,bb);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.19,-0.04-swing,  0.26, ls*1.6,0.07,ls*1.8), br,bg,bb);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw,-0.19,-0.04-swing, -0.30, ls*1.6,0.07,ls*1.8), br,bg,bb);
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0.19,-0.04+swing, -0.30, ls*1.6,0.07,ls*1.8), br,bg,bb);
+      // draw a cat — used for clanmates and player
+      function drawCat(x, bY, z, yaw, r, g, b, swing=0, bH=0.26, hFwd=0.52, hY=0.42) {
+        // body — two boxes for a slight taper (broader chest, narrower rump)
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.26,  0.08, 0.50,bH,  0.55), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.22, -0.30, 0.38,bH*0.85,0.32), r,g,b);
+        // neck
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.36,  0.32, 0.16,0.20,0.16), r,g,b);
+        // head — cylinder looks rounder than a box
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY,    hFwd, 0.28,0.26,0.28), r,g,b);
+        // snout
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, hY-0.06, hFwd+0.16, 0.14,0.11,0.11), r*1.05,g*1.05,b*1.05);
+        // nose — pink
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, hY-0.03, hFwd+0.23, 0.04,0.03,0.02), 0.80,0.40,0.45);
+        // ears — tall pointy cones
+        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.12, hY+0.22, hFwd, 0.08,0.22,0.07), r,g,b);
+        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.12, hY+0.22, hFwd, 0.08,0.22,0.07), r,g,b);
+        // inner ear — pink
+        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.12, hY+0.20, hFwd, 0.04,0.14,0.04), 0.75,0.38,0.42);
+        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.12, hY+0.20, hFwd, 0.04,0.14,0.04), 0.75,0.38,0.42);
+        // whiskers — flat thin wide boxes sticking sideways
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.26, hY-0.04, hFwd+0.14, 0.24,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.26, hY-0.04, hFwd+0.14, 0.24,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.24, hY-0.09, hFwd+0.12, 0.20,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.24, hY-0.09, hFwd+0.12, 0.20,0.012,0.012), 0.88,0.86,0.80);
+        // tail — 3 segments curving up and round
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.20, -0.52, 0.07,0.38,0.07), r,g,b);
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.50, -0.62, 0.06,0.32,0.06), r,g,b);
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.72, -0.54, 0.05,0.22,0.05), r,g,b);
+        // legs — with paws (wider box at bottom)
+        const ls=0.09, lh=0.20;
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16, 0.08+ swing, 0.24, ls,  lh,  ls),   r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16, 0.08- swing, 0.24, ls,  lh,  ls),   r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16,-0.05+ swing, 0.24, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16,-0.05- swing, 0.24, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16, 0.08- swing,-0.28, ls,  lh*1.1,ls),  r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16, 0.08+ swing,-0.28, ls,  lh*1.1,ls),  r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16,-0.05- swing,-0.28, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16,-0.05+ swing,-0.28, ls*1.4,0.06,ls*1.5), r,g,b);
       }
 
       for (const c of clanmates) drawCat(c.x, 0, c.z, c.yaw, c.r, c.g, c.b);
