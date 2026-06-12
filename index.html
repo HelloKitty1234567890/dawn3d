@@ -608,6 +608,7 @@
       const atPile = Math.sqrt(player.x*player.x + (player.z-1)*(player.z-1)) < 4;
 
       // warrior-only: F to pick up / drop prey, E to eat
+      const canEat = playerRole==='warrior' && atPile && pileCount > 0 && hunger < 99;
       if (playerRole === 'warrior') {
         if (keys['f'] && !player._fPressed) {
           if (carrying && atPile) {
@@ -621,7 +622,6 @@
           }
           player._fPressed = true;
         }
-        const canEat = atPile && pileCount > 0 && hunger < 99;
         if (keys['e'] && !player._ePressed && canEat) {
           pileCount--;
           hunger = Math.min(100, hunger + 50);
