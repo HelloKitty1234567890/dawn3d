@@ -104,10 +104,10 @@
     background:rgba(80,0,0,0.70);border:2px solid #c03030;border-radius:10px;
     padding:8px 24px;color:#ffccaa;font-family:Georgia,serif;font-size:18px;
     text-shadow:1px 1px 4px #000;pointer-events:none;text-align:center;"></div>
-  <div id="carry-badge" style="display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);
+  <div id="carry-badge" onclick="dropPrey()" style="display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);
     background:rgba(0,0,0,0.65);border:2px solid #c8902a;border-radius:12px;
     padding:10px 22px;color:#f5e06a;font-family:Georgia,serif;font-size:20px;
-    text-shadow:1px 1px 4px #000;pointer-events:none;"></div>
+    text-shadow:1px 1px 4px #000;cursor:pointer;"></div>
   <div id="controls">W A S D · Mouse to look · Shift to crouch · Space to pounce</div>
 
   <script>
@@ -543,6 +543,13 @@
     const prey = Array.from({length: 12}, spawnPrey);
     let killCount = 0;
     let carrying = null;
+    window.dropPrey = function() {
+      if (!carrying) return;
+      carrying.catchX = player.x; carrying.catchZ = player.z;
+      carrying.x = player.x;     carrying.z = player.z;
+      carrying = null;
+      document.getElementById('carry-badge').style.display = 'none';
+    };
     let pileCount = 0;
     let hunger = 100;
     let health = 100;
@@ -551,7 +558,16 @@
 
     const player = { x: 0, z: 0, yaw: 0, walkPhase: 0, crouching: false };
     const keys = {};
-    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true;  keys[e.code.toLowerCase()] = true;  e.code==='Space' && e.preventDefault(); });
+    document.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;  keys[e.code.toLowerCase()] = true;  e.code==='Space' && e.preventDefault();
+      if (e.key.toLowerCase() === 'g') { document.title = 'G PRESSED carrying=' + (carrying ? 'YES' : 'NO'); }
+      if (e.key.toLowerCase() === 'g' && carrying) {
+        carrying.catchX = player.x; carrying.catchZ = player.z;
+        carrying.x = player.x;     carrying.z = player.z;
+        carrying = null;
+        document.getElementById('carry-badge').style.display = 'none';
+      }
+    });
     document.addEventListener('keyup',   e => { keys[e.key.toLowerCase()] = false; keys[e.code.toLowerCase()] = false; });
 
     // mouse look
@@ -578,6 +594,8 @@
 
       // don't process gameplay until role chosen
       if (!playerRole) { requestAnimationFrame(frame); return; }
+
+      try {
 
       // crouch
       player.crouching = !!(keys['shift'] || keys['shiftleft'] || keys['shiftright']);
@@ -709,7 +727,7 @@
       }
 
       // pounce! (warrior only)
-      const canPounce = playerRole==='warrior' && nearPrey && nearDist < 2.5;
+      const canPounce = playerRole==='warrior' && !carrying && nearPrey && nearDist < 2.5;
       if (canPounce && (keys['space'] || keys[' ']) && !player._pounced) {
         nearPrey.caught = true;
         nearPrey.catchX = nearPrey.x;
@@ -764,6 +782,9 @@
       }
       if (!keys['f']) player._fPressed = false;
       if (!keys['e']) player._ePressed = false;
+
+      const dropBtn = document.getElementById('drop-btn');
+      if (dropBtn) dropBtn.style.display = carrying ? 'block' : 'none';
 
       // ── medicine cat: gather herbs + heal clanmates ──────────────────────
       let nearHerb = null, nearHerbDist = 99;
@@ -853,6 +874,7 @@
         if      (canPounce)         { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
         else if (canPickup)         { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
         else if (carrying && atPile){ prompt.style.display='block'; prompt.textContent='🐾 Press F to add to pile!'; }
+        else if (carrying)          { prompt.style.display='block'; prompt.textContent='🐾 Press G to put prey down!'; }
         else if (canEat)            { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
         else if (canAskMate)        { prompt.style.display='block'; prompt.textContent='❤️ Press M to ask ' + nearCat.name + ' to be your mate!'; }
         else if (canBreakUp)        { prompt.style.display='block'; prompt.textContent='💔 Press M to leave ' + mate.name + '...'; }
@@ -1140,6 +1162,7 @@
         drawMesh(box,  makeModelR(px,cy,pz, yaw, 0,       headY-0.14+bob, fwd-0.12,  0.06*s,0.06*s,0.06*s), 0.88,0.84,0.80);
       }
 
+      } catch(e) { console.error('Frame error:', e); }
       requestAnimationFrame(frame);
     }
 
