@@ -759,12 +759,12 @@
         const dr = r*0.55, dg = g*0.55, db = b*0.55;
 
         // ── body: big chunky barrel ───────────────────────────────────────
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.30,  0.00, 0.58,bH,  0.68), r,g,b);   // main barrel
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.26, -0.32, 0.50,bH*0.88,0.44), r,g,b); // rump
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.28,  0.00, 0.44,bH,  0.62), r,g,b);   // main barrel
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.24, -0.30, 0.38,bH*0.85,0.40), r,g,b); // rump
         // fluffy chest puff
-        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.28,  0.36, 0.46,bH*0.80,0.36), br,bg,bb);
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.26,  0.34, 0.36,bH*0.75,0.30), br,bg,bb);
         // belly — lighter
-        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.10,  0.02, 0.36,0.12,0.55), br,bg,bb);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.10,  0.02, 0.28,0.10,0.50), br,bg,bb);
 
         // ── neck: short thick ─────────────────────────────────────────────
         drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.44,  0.30, 0.26,0.18,0.26), r,g,b);
