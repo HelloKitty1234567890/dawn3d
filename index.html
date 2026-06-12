@@ -560,22 +560,47 @@
       if (pileCount > 3) drawMesh(box, makeModel(-0.2, ph*0.5-0.32, 0.9, 0.4, ph*0.5, 0.35), 0.38, 0.26, 0.15);
       if (pileCount > 5) drawMesh(box, makeModel( 0.6, ph*0.5-0.30, 0.7, 0.35,ph*0.4, 0.30), 0.44, 0.32, 0.18);
 
-      // draw a clanmate cat
-      function drawCat(x, z, yaw, r, g, b) {
-        drawMesh(box,  makeModelR(x,0,z, yaw, 0, 0.28, 0,    0.55,0.28,0.80), r,g,b);
-        drawMesh(box,  makeModelR(x,0,z, yaw, 0, 0.38, 0.35, 0.22,0.20,0.22), r,g,b);
-        drawMesh(box,  makeModelR(x,0,z, yaw, 0, 0.42, 0.52, 0.32,0.28,0.30), r,g,b);
-        drawMesh(cone, makeModelR(x,0,z, yaw,-0.09,0.60,0.52, 0.09,0.14,0.09), r,g,b);
-        drawMesh(cone, makeModelR(x,0,z, yaw, 0.09,0.60,0.52, 0.09,0.14,0.09), r,g,b);
-        drawMesh(cyl,  makeModelR(x,0,z, yaw, 0, 0.30,-0.62, 0.07,0.50,0.07), r,g,b);
-        const ls=0.11, lh=0.22;
-        drawMesh(box,  makeModelR(x,0,z, yaw,-0.18,0.08, 0.22, ls,lh,ls), r,g,b);
-        drawMesh(box,  makeModelR(x,0,z, yaw, 0.18,0.08, 0.22, ls,lh,ls), r,g,b);
-        drawMesh(box,  makeModelR(x,0,z, yaw,-0.18,0.08,-0.22, ls,lh,ls), r,g,b);
-        drawMesh(box,  makeModelR(x,0,z, yaw, 0.18,0.08,-0.22, ls,lh,ls), r,g,b);
+      // draw a cat — used for clanmates and player
+      function drawCat(x, bY, z, yaw, r, g, b, swing=0, bH=0.26, hFwd=0.52, hY=0.42) {
+        // body — two boxes for a slight taper (broader chest, narrower rump)
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.26,  0.08, 0.50,bH,  0.55), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, 0.22, -0.30, 0.38,bH*0.85,0.32), r,g,b);
+        // neck
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, 0.36,  0.32, 0.16,0.20,0.16), r,g,b);
+        // head — cylinder looks rounder than a box
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0, hY,    hFwd, 0.28,0.26,0.28), r,g,b);
+        // snout
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, hY-0.06, hFwd+0.16, 0.14,0.11,0.11), r*1.05,g*1.05,b*1.05);
+        // nose — pink
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0, hY-0.03, hFwd+0.23, 0.04,0.03,0.02), 0.80,0.40,0.45);
+        // ears — tall pointy cones
+        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.12, hY+0.22, hFwd, 0.08,0.22,0.07), r,g,b);
+        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.12, hY+0.22, hFwd, 0.08,0.22,0.07), r,g,b);
+        // inner ear — pink
+        drawMesh(cone, makeModelR(x,bY,z, yaw,-0.12, hY+0.20, hFwd, 0.04,0.14,0.04), 0.75,0.38,0.42);
+        drawMesh(cone, makeModelR(x,bY,z, yaw, 0.12, hY+0.20, hFwd, 0.04,0.14,0.04), 0.75,0.38,0.42);
+        // whiskers — flat thin wide boxes sticking sideways
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.26, hY-0.04, hFwd+0.14, 0.24,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.26, hY-0.04, hFwd+0.14, 0.24,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.24, hY-0.09, hFwd+0.12, 0.20,0.012,0.012), 0.88,0.86,0.80);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.24, hY-0.09, hFwd+0.12, 0.20,0.012,0.012), 0.88,0.86,0.80);
+        // tail — 3 segments curving up and round
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.20, -0.52, 0.07,0.38,0.07), r,g,b);
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.50, -0.62, 0.06,0.32,0.06), r,g,b);
+        drawMesh(cyl, makeModelR(x,bY,z, yaw, 0,    0.72, -0.54, 0.05,0.22,0.05), r,g,b);
+        // legs — with paws (wider box at bottom)
+        const ls=0.09, lh=0.20;
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16, 0.08+ swing, 0.24, ls,  lh,  ls),   r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16, 0.08- swing, 0.24, ls,  lh,  ls),   r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16,-0.05+ swing, 0.24, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16,-0.05- swing, 0.24, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16, 0.08- swing,-0.28, ls,  lh*1.1,ls),  r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16, 0.08+ swing,-0.28, ls,  lh*1.1,ls),  r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw,-0.16,-0.05- swing,-0.28, ls*1.4,0.06,ls*1.5), r,g,b);
+        drawMesh(box, makeModelR(x,bY,z, yaw, 0.16,-0.05+ swing,-0.28, ls*1.4,0.06,ls*1.5), r,g,b);
       }
 
-      for (const c of clanmates) drawCat(c.x, c.z, c.yaw, c.r, c.g, c.b);
+      for (const c of clanmates) drawCat(c.x, 0, c.z, c.yaw, c.r, c.g, c.b);
 
       // ── prey animals ─────────────────────────────────────────────────────
       for (const p of prey) {
@@ -624,24 +649,12 @@
       const px = player.x, pz = player.z;
       const yaw = player.yaw;
       const swing = Math.sin(player.walkPhase) * 0.12;
-      const cr = 0.22, cg = 0.22, cb = 0.25;
-      // crouching lowers and flattens the body
-      const cy = player.crouching ? -0.10 : 0;
-      const bodyH = player.crouching ? 0.16 : 0.28;
-      const headFwd = player.crouching ? 0.60 : 0.52;
-      const headY  = player.crouching ? 0.22 : 0.42;
+      const cy     = player.crouching ? -0.10 : 0;
+      const bodyH  = player.crouching ? 0.14  : 0.26;
+      const headFwd= player.crouching ? 0.62  : 0.52;
+      const headY  = player.crouching ? 0.20  : 0.42;
 
-      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, 0.28, 0,    0.55,bodyH,0.80), cr,cg,cb);
-      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, 0.34, 0.35, 0.22,0.16,0.22),  cr,cg,cb);
-      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, headY,headFwd, 0.32,0.28,0.30), cr,cg,cb);
-      drawMesh(cone, makeModelR(px,cy,pz, yaw,-0.09,headY+0.18,headFwd, 0.09,0.14,0.09), cr,cg,cb);
-      drawMesh(cone, makeModelR(px,cy,pz, yaw, 0.09,headY+0.18,headFwd, 0.09,0.14,0.09), cr,cg,cb);
-      drawMesh(cyl,  makeModelR(px,cy,pz, yaw, 0, 0.30,-0.62, 0.07,0.50,0.07), cr,cg,cb);
-      const ls=0.11, lh=player.crouching?0.14:0.22;
-      drawMesh(box, makeModelR(px,cy,pz, yaw,-0.18, 0.08+swing,  0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08-swing,  0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,cy,pz, yaw,-0.18, 0.08-swing, -0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08+swing, -0.22, ls,lh,ls), cr,cg,cb);
+      drawCat(px, cy, pz, yaw, 0.22, 0.22, 0.25, swing, bodyH, headFwd, headY);
 
       // carried prey dangles from mouth
       if (carrying) {
@@ -649,9 +662,7 @@
         const pr = carrying.type==='rabbit' ? 0.62 : 0.32;
         const pg = carrying.type==='rabbit' ? 0.55 : 0.28;
         const pb = carrying.type==='rabbit' ? 0.45 : 0.20;
-        // hang just in front of and below the head
         drawMesh(box, makeModelR(px,cy,pz, yaw, 0, headY-0.15, headFwd+0.22, 0.28*s,0.14*s,0.35*s), pr,pg,pb);
-        // little legs dangling
         drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
         drawMesh(box, makeModelR(px,cy,pz, yaw, 0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
         drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.28, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
