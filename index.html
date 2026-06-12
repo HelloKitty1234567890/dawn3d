@@ -97,6 +97,10 @@
       <div id="hunger-bar" style="width:100%;height:100%;background:#c8702a;transition:width 0.3s;"></div>
     </div>
   </div>
+  <div id="carry-badge" style="display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.65);border:2px solid #c8902a;border-radius:12px;
+    padding:10px 22px;color:#f5e06a;font-family:Georgia,serif;font-size:20px;
+    text-shadow:1px 1px 4px #000;pointer-events:none;"></div>
   <div id="controls">W A S D · Mouse to look · Shift to crouch · Space to pounce</div>
 
   <script>
@@ -617,8 +621,12 @@
             carrying = null;
             pileCount++;
             document.getElementById('kills').textContent = 'Fresh-kill pile: ' + pileCount;
+            document.getElementById('carry-badge').style.display = 'none';
           } else if (canPickup) {
             carrying = nearCaught;
+            const icon = carrying.type === 'rabbit' ? '🐇' : '🐭';
+            document.getElementById('carry-badge').style.display = 'block';
+            document.getElementById('carry-badge').textContent = icon + ' Carrying ' + carrying.type + '!';
           }
           player._fPressed = true;
         }
@@ -869,17 +877,29 @@
 
       drawCat(px, cy, pz, yaw, 0.22, 0.22, 0.25, swing, bodyH, headFwd, headY);
 
-      // carried prey dangles from mouth
+      // carried prey — big and obvious, dangling and bouncing from mouth
       if (carrying) {
-        const s  = carrying.type==='rabbit' ? 1.4 : 0.7;
+        const s  = carrying.type==='rabbit' ? 2.0 : 1.2; // bigger than before
         const pr = carrying.type==='rabbit' ? 0.62 : 0.32;
         const pg = carrying.type==='rabbit' ? 0.55 : 0.28;
         const pb = carrying.type==='rabbit' ? 0.45 : 0.20;
-        drawMesh(box, makeModelR(px,cy,pz, yaw, 0, headY-0.15, headFwd+0.22, 0.28*s,0.14*s,0.35*s), pr,pg,pb);
-        drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
-        drawMesh(box, makeModelR(px,cy,pz, yaw, 0.07*s, headY-0.24, headFwd+0.18, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
-        drawMesh(box, makeModelR(px,cy,pz, yaw,-0.07*s, headY-0.24, headFwd+0.28, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
-        drawMesh(box, makeModelR(px,cy,pz, yaw, 0.07*s, headY-0.24, headFwd+0.28, 0.05*s,0.12*s,0.05*s), pr,pg,pb);
+        const bob = Math.sin(player.walkPhase * 1.5) * 0.06; // bounces as you walk
+        const fwd = headFwd + 0.28;
+        // body
+        drawMesh(box,  makeModelR(px,cy,pz, yaw, 0,       headY-0.18+bob, fwd,       0.28*s,0.14*s,0.38*s), pr,pg,pb);
+        // head
+        drawMesh(box,  makeModelR(px,cy,pz, yaw, 0,       headY-0.10+bob, fwd+0.22*s,0.18*s,0.16*s,0.16*s), pr,pg,pb);
+        // ears
+        const eh = carrying.type==='rabbit' ? 0.16*s : 0.07*s;
+        drawMesh(cone, makeModelR(px,cy,pz, yaw,-0.05*s,  headY+0.02+bob, fwd+0.22*s,0.05*s,eh,   0.05*s), pr,pg,pb);
+        drawMesh(cone, makeModelR(px,cy,pz, yaw, 0.05*s,  headY+0.02+bob, fwd+0.22*s,0.05*s,eh,   0.05*s), pr,pg,pb);
+        // legs dangling down
+        drawMesh(box,  makeModelR(px,cy,pz, yaw,-0.09*s,  headY-0.30+bob, fwd+0.05,  0.06*s,0.16*s,0.06*s), pr,pg,pb);
+        drawMesh(box,  makeModelR(px,cy,pz, yaw, 0.09*s,  headY-0.30+bob, fwd+0.05,  0.06*s,0.16*s,0.06*s), pr,pg,pb);
+        drawMesh(box,  makeModelR(px,cy,pz, yaw,-0.09*s,  headY-0.30+bob, fwd+0.22,  0.06*s,0.16*s,0.06*s), pr,pg,pb);
+        drawMesh(box,  makeModelR(px,cy,pz, yaw, 0.09*s,  headY-0.30+bob, fwd+0.22,  0.06*s,0.16*s,0.06*s), pr,pg,pb);
+        // tail
+        drawMesh(box,  makeModelR(px,cy,pz, yaw, 0,       headY-0.14+bob, fwd-0.12,  0.06*s,0.06*s,0.06*s), 0.88,0.84,0.80);
       }
 
       requestAnimationFrame(frame);
