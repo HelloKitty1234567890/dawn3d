@@ -177,6 +177,23 @@
       return mulMat(out, T, S);
     }
 
+    // T(world + rotated local offset) * Ry * S  — for cat parts
+    function makeModelR(wx, wy, wz, yaw, lx, ly, lz, sx, sy, sz) {
+      const c = Math.cos(yaw), s = Math.sin(yaw);
+      // rotate local offset by yaw
+      const tx = wx + c*lx + s*lz;
+      const ty = wy + ly;
+      const tz = wz - s*lx + c*lz;
+      const T = mat4(), R = mat4(), S = mat4(), tmp = mat4(), out = mat4();
+      translate(T, tx, ty, tz);
+      identity(R);
+      R[0]=c; R[2]=-s; R[8]=s; R[10]=c;
+      scale(S, sx, sy, sz);
+      mulMat(tmp, T, R);
+      mulMat(out, tmp, S);
+      return out;
+    }
+
     // ── geometry builders ────────────────────────────────────────────────────
 
     function makeBox() {
@@ -286,7 +303,7 @@
 
     // ── player ───────────────────────────────────────────────────────────────
 
-    const player = { x: 0, z: 0, yaw: 0 };
+    const player = { x: 0, z: 0, yaw: 0, walkPhase: 0 };
     const keys = {};
     document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
@@ -316,10 +333,12 @@
       // movement
       const speed = 5;
       const dx = Math.sin(player.yaw), dz = Math.cos(player.yaw);
-      if (keys['w'] || keys['arrowup'])   { player.x += dx*speed*dt; player.z += dz*speed*dt; }
-      if (keys['s'] || keys['arrowdown']) { player.x -= dx*speed*dt; player.z -= dz*speed*dt; }
-      if (keys['a'] || keys['arrowleft']) { player.x += dz*speed*dt; player.z -= dx*speed*dt; }
-      if (keys['d'] || keys['arrowright']){ player.x -= dz*speed*dt; player.z += dx*speed*dt; }
+      let moving = false;
+      if (keys['w'] || keys['arrowup'])   { player.x += dx*speed*dt; player.z += dz*speed*dt; moving=true; }
+      if (keys['s'] || keys['arrowdown']) { player.x -= dx*speed*dt; player.z -= dz*speed*dt; moving=true; }
+      if (keys['a'] || keys['arrowleft']) { player.x += dz*speed*dt; player.z -= dx*speed*dt; moving=true; }
+      if (keys['d'] || keys['arrowright']){ player.x -= dz*speed*dt; player.z += dx*speed*dt; moving=true; }
+      if (moving) player.walkPhase += dt * 8;
 
       // camera — just behind and above the cat
       const camDist = 3.5, camH = 2.2;
@@ -361,24 +380,29 @@
       }
 
       // ── cat (your warrior!) ──────────────────────────────────────────────
-      const ci = makeModel;
       const px = player.x, pz = player.z;
+      const yaw = player.yaw;
+      // leg swing: front-left/back-right together, front-right/back-left together
+      const swing = Math.sin(player.walkPhase) * 0.12;
+      const cr = 0.22, cg = 0.22, cb = 0.25; // coat color: dark gray
 
-      // body
-      drawMesh(box, ci(px, 0.28, pz, 0.55, 0.28, 0.80), 0.22, 0.22, 0.25);
+      // body (elongated along local Z = forward)
+      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.28, 0,   0.55,0.28,0.80), cr,cg,cb);
+      // neck
+      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.38, 0.35, 0.22,0.20,0.22), cr,cg,cb);
       // head
-      drawMesh(box, ci(px + dx*0.42, 0.42, pz + dz*0.42, 0.32, 0.28, 0.30), 0.20, 0.20, 0.23);
+      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.42, 0.52, 0.32,0.28,0.30), cr,cg,cb);
       // ears
-      drawMesh(cone, ci(px+dx*0.42-0.08, 0.60, pz+dz*0.42, 0.09, 0.14, 0.09), 0.20, 0.20, 0.23);
-      drawMesh(cone, ci(px+dx*0.42+0.08, 0.60, pz+dz*0.42, 0.09, 0.14, 0.09), 0.20, 0.20, 0.23);
-      // tail
-      drawMesh(cyl, ci(px - dx*0.55, 0.22, pz - dz*0.55, 0.07, 0.55, 0.07), 0.22, 0.22, 0.25);
-      // legs
-      const ls = 0.12, lh = 0.22;
-      drawMesh(box, ci(px+0.16, 0.08, pz+0.22, ls, lh, ls), 0.20, 0.20, 0.23);
-      drawMesh(box, ci(px-0.16, 0.08, pz+0.22, ls, lh, ls), 0.20, 0.20, 0.23);
-      drawMesh(box, ci(px+0.16, 0.08, pz-0.22, ls, lh, ls), 0.20, 0.20, 0.23);
-      drawMesh(box, ci(px-0.16, 0.08, pz-0.22, ls, lh, ls), 0.20, 0.20, 0.23);
+      drawMesh(cone, makeModelR(px,0,pz, yaw,-0.09,0.60,0.52, 0.09,0.14,0.09), cr,cg,cb);
+      drawMesh(cone, makeModelR(px,0,pz, yaw, 0.09,0.60,0.52, 0.09,0.14,0.09), cr,cg,cb);
+      // tail curves up behind
+      drawMesh(cyl,  makeModelR(px,0,pz, yaw, 0, 0.30,-0.62, 0.07,0.50,0.07), cr,cg,cb);
+      // legs: local x=±0.18, local z=±0.22, animated with swing offset
+      const ls=0.11, lh=0.22;
+      drawMesh(box, makeModelR(px,0,pz, yaw,-0.18, 0.08+swing,  0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,0,pz, yaw, 0.18, 0.08-swing,  0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,0,pz, yaw,-0.18, 0.08-swing, -0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,0,pz, yaw, 0.18, 0.08+swing, -0.22, ls,lh,ls), cr,cg,cb);
 
       requestAnimationFrame(frame);
     }
