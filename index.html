@@ -347,8 +347,8 @@
 
     const player = { x: 0, z: 0, yaw: 0, walkPhase: 0, crouching: false };
     const keys = {};
-    document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
+    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true;  keys[e.code.toLowerCase()] = true;  e.code==='Space' && e.preventDefault(); });
+    document.addEventListener('keyup',   e => { keys[e.key.toLowerCase()] = false; keys[e.code.toLowerCase()] = false; });
 
     // mouse look
     canvas.addEventListener('click', () => canvas.requestPointerLock());
@@ -423,15 +423,15 @@
       }
 
       // pounce!
-      const canPounce = nearPrey && nearDist < 1.6 && player.crouching;
-      if (canPounce && keys[' '] && !player._pounced) {
+      const canPounce = nearPrey && nearDist < 2.5;
+      if (canPounce && (keys['space'] || keys[' ']) && !player._pounced) {
         nearPrey.caught = true;
         nearPrey.respawnTimer = 15;
         killCount++;
         document.getElementById('kills').textContent = 'Fresh-kill: ' + killCount;
         player._pounced = true;
       }
-      if (!keys[' ']) player._pounced = false;
+      if (!keys['space'] && !keys[' ']) player._pounced = false;
 
       document.getElementById('prey-prompt').style.display = canPounce ? 'block' : 'none';
 
