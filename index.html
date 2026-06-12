@@ -35,7 +35,13 @@
 </head>
 <body>
   <div id="ui">⚔️ ThunderClan Territory</div>
-  <div id="controls">W A S D to move &nbsp;|&nbsp; Mouse to look around</div>
+  <div id="prey-prompt" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    color:#f5e06a;font-family:Georgia,serif;font-size:22px;text-shadow:1px 1px 6px #000;
+    pointer-events:none;display:none;">🐾 Press SPACE to pounce!</div>
+  <div id="kills" style="position:fixed;top:16px;right:20px;color:#e8d5a3;
+    font-family:Georgia,serif;font-size:16px;text-shadow:1px 1px 4px #000;pointer-events:none;">
+    Fresh-kill: 0</div>
+  <div id="controls">W A S D · Mouse to look · Shift to crouch · Space to pounce</div>
 
   <script>
     // ── tiny 3D engine from scratch ──────────────────────────────────────────
@@ -317,9 +323,29 @@
       { name:'Brackenfur', x:-2,   z: 3,   yaw: Math.PI*0.9,r:0.55, g:0.40, b:0.18 }, // golden-brown
     ];
 
+    // ── prey ─────────────────────────────────────────────────────────────────
+
+    function spawnPrey() {
+      const angle = RNG() * Math.PI * 2;
+      const dist  = 10 + RNG() * 28; // out in the forest, not in camp
+      return {
+        x: Math.cos(angle) * dist,
+        z: Math.sin(angle) * dist,
+        yaw: RNG() * Math.PI * 2,
+        type: RNG() > 0.4 ? 'mouse' : 'rabbit', // rabbits are bigger
+        wanderTimer: RNG() * 2,
+        fleeing: false,
+        caught: false,
+        respawnTimer: 0,
+      };
+    }
+
+    const prey = Array.from({length: 12}, spawnPrey);
+    let killCount = 0;
+
     // ── player ───────────────────────────────────────────────────────────────
 
-    const player = { x: 0, z: 0, yaw: 0, walkPhase: 0 };
+    const player = { x: 0, z: 0, yaw: 0, walkPhase: 0, crouching: false };
     const keys = {};
     document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
@@ -346,18 +372,72 @@
       const dt = Math.min((ts - last) / 1000, 0.05);
       last = ts;
 
+      // crouch
+      player.crouching = !!(keys['shift'] || keys['shiftleft'] || keys['shiftright']);
+      const speed = player.crouching ? 1.8 : 5;
+
       // movement
-      const speed = 5;
       const dx = Math.sin(player.yaw), dz = Math.cos(player.yaw);
       let moving = false;
       if (keys['w'] || keys['arrowup'])   { player.x += dx*speed*dt; player.z += dz*speed*dt; moving=true; }
       if (keys['s'] || keys['arrowdown']) { player.x -= dx*speed*dt; player.z -= dz*speed*dt; moving=true; }
       if (keys['a'] || keys['arrowleft']) { player.x += dz*speed*dt; player.z -= dx*speed*dt; moving=true; }
       if (keys['d'] || keys['arrowright']){ player.x -= dz*speed*dt; player.z += dx*speed*dt; moving=true; }
-      if (moving) player.walkPhase += dt * 8;
+      if (moving) player.walkPhase += dt * (player.crouching ? 4 : 8);
+
+      // ── update prey ──────────────────────────────────────────────────────
+      let nearPrey = null, nearDist = 99;
+      for (const p of prey) {
+        if (p.caught) {
+          p.respawnTimer -= dt;
+          if (p.respawnTimer <= 0) Object.assign(p, spawnPrey());
+          continue;
+        }
+        const pdx = player.x - p.x, pdz = player.z - p.z;
+        const dist = Math.sqrt(pdx*pdx + pdz*pdz);
+
+        // flee if player is close and NOT crouching
+        if (dist < 5 && !player.crouching) p.fleeing = true;
+        if (dist > 12) p.fleeing = false;
+
+        const moveSpeed = p.fleeing ? (p.type==='rabbit'?4.5:3) : 0.6;
+
+        // wander / flee direction
+        p.wanderTimer -= dt;
+        if (p.wanderTimer <= 0) {
+          p.yaw += (Math.random()-0.5) * Math.PI;
+          p.wanderTimer = 1 + Math.random() * 2;
+        }
+        if (p.fleeing) {
+          // run away from player
+          p.yaw = Math.atan2(-pdx, -pdz);
+        }
+        p.x += Math.sin(p.yaw) * moveSpeed * dt;
+        p.z += Math.cos(p.yaw) * moveSpeed * dt;
+        // keep in bounds
+        const bound = 44;
+        if (Math.abs(p.x) > bound) p.x *= 0.98;
+        if (Math.abs(p.z) > bound) p.z *= 0.98;
+
+        if (dist < nearDist) { nearDist = dist; nearPrey = p; }
+      }
+
+      // pounce!
+      const canPounce = nearPrey && nearDist < 1.6 && player.crouching;
+      if (canPounce && keys[' '] && !player._pounced) {
+        nearPrey.caught = true;
+        nearPrey.respawnTimer = 15;
+        killCount++;
+        document.getElementById('kills').textContent = 'Fresh-kill: ' + killCount;
+        player._pounced = true;
+      }
+      if (!keys[' ']) player._pounced = false;
+
+      document.getElementById('prey-prompt').style.display = canPounce ? 'block' : 'none';
 
       // camera — just behind and above the cat
-      const camDist = 3.5, camH = 2.2;
+      const camH = player.crouching ? 1.0 : 2.2;
+      const camDist = player.crouching ? 2.5 : 3.5;
       const cx = player.x - dx * camDist;
       const cz = player.z - dz * camDist;
 
@@ -422,6 +502,25 @@
 
       for (const c of clanmates) drawCat(c.x, c.z, c.yaw, c.r, c.g, c.b);
 
+      // ── prey animals ─────────────────────────────────────────────────────
+      for (const p of prey) {
+        if (p.caught) continue;
+        const s = p.type === 'rabbit' ? 1.4 : 0.7;
+        const pr = p.type === 'rabbit' ? 0.62 : 0.32;
+        const pg = p.type === 'rabbit' ? 0.55 : 0.28;
+        const pb = p.type === 'rabbit' ? 0.45 : 0.20;
+        // body
+        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.12*s, 0,    0.28*s,0.14*s,0.45*s), pr,pg,pb);
+        // head
+        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.18*s, 0.25*s, 0.18*s,0.16*s,0.18*s), pr,pg,pb);
+        // ears (tall for rabbit, small for mouse)
+        const eh = p.type==='rabbit' ? 0.22*s : 0.08*s;
+        drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw,-0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
+        drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw, 0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
+        // tail
+        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.14*s,-0.26*s, 0.06*s,0.06*s,0.06*s), 0.85,0.82,0.80);
+      }
+
       // trees
       for (const t of trees) {
         // trunk
@@ -436,27 +535,25 @@
       // ── cat (your warrior!) ──────────────────────────────────────────────
       const px = player.x, pz = player.z;
       const yaw = player.yaw;
-      // leg swing: front-left/back-right together, front-right/back-left together
       const swing = Math.sin(player.walkPhase) * 0.12;
-      const cr = 0.22, cg = 0.22, cb = 0.25; // coat color: dark gray
+      const cr = 0.22, cg = 0.22, cb = 0.25;
+      // crouching lowers and flattens the body
+      const cy = player.crouching ? -0.10 : 0;
+      const bodyH = player.crouching ? 0.16 : 0.28;
+      const headFwd = player.crouching ? 0.60 : 0.52;
+      const headY  = player.crouching ? 0.22 : 0.42;
 
-      // body (elongated along local Z = forward)
-      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.28, 0,   0.55,0.28,0.80), cr,cg,cb);
-      // neck
-      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.38, 0.35, 0.22,0.20,0.22), cr,cg,cb);
-      // head
-      drawMesh(box,  makeModelR(px,0,pz, yaw, 0, 0.42, 0.52, 0.32,0.28,0.30), cr,cg,cb);
-      // ears
-      drawMesh(cone, makeModelR(px,0,pz, yaw,-0.09,0.60,0.52, 0.09,0.14,0.09), cr,cg,cb);
-      drawMesh(cone, makeModelR(px,0,pz, yaw, 0.09,0.60,0.52, 0.09,0.14,0.09), cr,cg,cb);
-      // tail curves up behind
-      drawMesh(cyl,  makeModelR(px,0,pz, yaw, 0, 0.30,-0.62, 0.07,0.50,0.07), cr,cg,cb);
-      // legs: local x=±0.18, local z=±0.22, animated with swing offset
-      const ls=0.11, lh=0.22;
-      drawMesh(box, makeModelR(px,0,pz, yaw,-0.18, 0.08+swing,  0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,0,pz, yaw, 0.18, 0.08-swing,  0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,0,pz, yaw,-0.18, 0.08-swing, -0.22, ls,lh,ls), cr,cg,cb);
-      drawMesh(box, makeModelR(px,0,pz, yaw, 0.18, 0.08+swing, -0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, 0.28, 0,    0.55,bodyH,0.80), cr,cg,cb);
+      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, 0.34, 0.35, 0.22,0.16,0.22),  cr,cg,cb);
+      drawMesh(box,  makeModelR(px,cy,pz, yaw, 0, headY,headFwd, 0.32,0.28,0.30), cr,cg,cb);
+      drawMesh(cone, makeModelR(px,cy,pz, yaw,-0.09,headY+0.18,headFwd, 0.09,0.14,0.09), cr,cg,cb);
+      drawMesh(cone, makeModelR(px,cy,pz, yaw, 0.09,headY+0.18,headFwd, 0.09,0.14,0.09), cr,cg,cb);
+      drawMesh(cyl,  makeModelR(px,cy,pz, yaw, 0, 0.30,-0.62, 0.07,0.50,0.07), cr,cg,cb);
+      const ls=0.11, lh=player.crouching?0.14:0.22;
+      drawMesh(box, makeModelR(px,cy,pz, yaw,-0.18, 0.08+swing,  0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08-swing,  0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,cy,pz, yaw,-0.18, 0.08-swing, -0.22, ls,lh,ls), cr,cg,cb);
+      drawMesh(box, makeModelR(px,cy,pz, yaw, 0.18, 0.08+swing, -0.22, ls,lh,ls), cr,cg,cb);
 
       requestAnimationFrame(frame);
     }
