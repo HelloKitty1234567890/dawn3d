@@ -820,8 +820,16 @@
           document.getElementById('mate-badge').textContent = '❤️ Mate: ' + mate.name;
           player._mPressed = true;
         } else if (canBreakUp) {
+          const exMate = mate;
           mate = null;
           document.getElementById('mate-badge').style.display = 'none';
+          // give ex-mate a long cooldown before they can chase
+          if (exMate.chasing !== undefined) {
+            exMate.chasing = false;
+            exMate.wanderTimer = 8; // walk away calmly for 8 seconds
+            // nudge them back toward their base so player can escape
+            exMate.yaw = Math.atan2(exMate.baseX - exMate.x, exMate.baseZ - exMate.z);
+          }
           player._mPressed = true;
         }
       }
