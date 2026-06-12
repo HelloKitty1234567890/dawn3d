@@ -607,28 +607,29 @@
       // drop at fresh-kill pile (camp centre ~0,1)
       const atPile = Math.sqrt(player.x*player.x + (player.z-1)*(player.z-1)) < 4;
 
-      // F key
-      if (keys['f'] && !player._fPressed) {
-        if (carrying && atPile) {
-          carrying.caught = false;
-          Object.assign(carrying, spawnPrey());
-          carrying = null;
-          pileCount++;
-          document.getElementById('kills').textContent = 'Fresh-kill pile: ' + pileCount;
-        } else if (canPickup) {
-          carrying = nearCaught;
+      // warrior-only: F to pick up / drop prey, E to eat
+      if (playerRole === 'warrior') {
+        if (keys['f'] && !player._fPressed) {
+          if (carrying && atPile) {
+            carrying.caught = false;
+            Object.assign(carrying, spawnPrey());
+            carrying = null;
+            pileCount++;
+            document.getElementById('kills').textContent = 'Fresh-kill pile: ' + pileCount;
+          } else if (canPickup) {
+            carrying = nearCaught;
+          }
+          player._fPressed = true;
         }
-        player._fPressed = true;
-      }
-      if (!keys['f']) player._fPressed = false;
+        if (!keys['f']) player._fPressed = false;
 
-      // eat from pile with E
-      const canEat = atPile && pileCount > 0 && hunger < 99;
-      if (keys['e'] && !player._ePressed && canEat) {
-        pileCount--;
-        hunger = Math.min(100, hunger + 50);
-        document.getElementById('kills').textContent = 'Fresh-kill pile: ' + pileCount;
-        player._ePressed = true;
+        const canEat = atPile && pileCount > 0 && hunger < 99;
+        if (keys['e'] && !player._ePressed && canEat) {
+          pileCount--;
+          hunger = Math.min(100, hunger + 50);
+          document.getElementById('kills').textContent = 'Fresh-kill pile: ' + pileCount;
+          player._ePressed = true;
+        }
       }
       if (!keys['e']) player._ePressed = false;
 
