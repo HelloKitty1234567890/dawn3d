@@ -295,15 +295,54 @@
     })(42);
 
     const trees = [];
-    // dense forest ring around the camp
     for (let i = 0; i < 120; i++) {
       const angle = RNG() * Math.PI * 2;
       const dist  = 8 + RNG() * 38;
-      const x = Math.cos(angle) * dist;
-      const z = Math.sin(angle) * dist;
-      const h = 3 + RNG() * 4;
-      const w = 0.3 + RNG() * 0.3;
-      trees.push({ x, z, h, w, dark: RNG() > 0.5 });
+      trees.push({
+        x: Math.cos(angle) * dist, z: Math.sin(angle) * dist,
+        h: 3 + RNG() * 4, w: 0.3 + RNG() * 0.3, dark: RNG() > 0.5
+      });
+    }
+
+    // rocks — scattered through forest and camp edges
+    const rocks = [];
+    for (let i = 0; i < 80; i++) {
+      const angle = RNG() * Math.PI * 2;
+      const dist  = 6 + RNG() * 40;
+      rocks.push({
+        x: Math.cos(angle) * dist + (RNG()-0.5),
+        z: Math.sin(angle) * dist + (RNG()-0.5),
+        w: 0.2 + RNG() * 0.7,  h: 0.15 + RNG() * 0.4,  d: 0.2 + RNG() * 0.6,
+        yaw: RNG() * Math.PI,
+        shade: 0.38 + RNG() * 0.2,
+      });
+    }
+
+    // bushes — round clumps of cones in the undergrowth
+    const bushes = [];
+    for (let i = 0; i < 90; i++) {
+      const angle = RNG() * Math.PI * 2;
+      const dist  = 7 + RNG() * 38;
+      bushes.push({
+        x: Math.cos(angle) * dist, z: Math.sin(angle) * dist,
+        r: 0.4 + RNG() * 0.7,
+        dark: RNG() > 0.5,
+        berries: RNG() > 0.75,
+      });
+    }
+
+    // grass tufts — dense patches everywhere
+    const grassTufts = [];
+    for (let i = 0; i < 200; i++) {
+      const angle = RNG() * Math.PI * 2;
+      const dist  = 2 + RNG() * 44;
+      grassTufts.push({
+        x: Math.cos(angle) * dist, z: Math.sin(angle) * dist,
+        h: 0.12 + RNG() * 0.18,
+        w: 0.06 + RNG() * 0.08,
+        yaw: RNG() * Math.PI,
+        bright: RNG() > 0.5,
+      });
     }
 
     // ── camp structures ──────────────────────────────────────────────────────
@@ -634,11 +673,41 @@
         }
       }
 
+      // grass tufts
+      for (const g of grassTufts) {
+        const gc = g.bright ? 0.30 : 0.22;
+        // two thin crossed blades per tuft
+        drawMesh(box, makeModel(g.x, g.h*0.5-0.39, g.z, g.w, g.h, g.w*6), gc, gc+0.10, gc*0.5);
+        drawMesh(box, makeModel(g.x, g.h*0.5-0.39, g.z, g.w*6, g.h, g.w), gc, gc+0.10, gc*0.5);
+      }
+
+      // rocks
+      for (const r of rocks) {
+        const s = r.shade;
+        drawMesh(box, makeModel(r.x, r.h*0.5-0.38, r.z, r.w, r.h, r.d), s, s*0.96, s*0.90);
+        // mossy top
+        drawMesh(box, makeModel(r.x, r.h-0.36, r.z, r.w*0.8, r.h*0.2, r.d*0.8), s*0.6, s*0.8, s*0.5);
+      }
+
+      // bushes
+      for (const b of bushes) {
+        const gr = b.dark ? 0.10 : 0.14;
+        const gg = b.dark ? 0.22 : 0.28;
+        const gb = b.dark ? 0.06 : 0.08;
+        // base cone cluster
+        drawMesh(cone, makeModel(b.x,        b.r*0.4-0.40, b.z,        b.r*1.8, b.r*0.9, b.r*1.8), gr,gg,gb);
+        drawMesh(cone, makeModel(b.x+b.r*0.4,b.r*0.3-0.40, b.z+b.r*0.3,b.r*1.2, b.r*0.7, b.r*1.2), gr,gg+0.02,gb);
+        drawMesh(cone, makeModel(b.x-b.r*0.3,b.r*0.3-0.40, b.z-b.r*0.4,b.r*1.1, b.r*0.6, b.r*1.1), gr,gg,gb);
+        // optional red berries
+        if (b.berries) {
+          drawMesh(box, makeModel(b.x+b.r*0.2, b.r*0.5-0.38, b.z,        0.08,0.08,0.08), 0.65,0.12,0.10);
+          drawMesh(box, makeModel(b.x-b.r*0.2, b.r*0.4-0.38, b.z+b.r*0.2,0.08,0.08,0.08), 0.65,0.12,0.10);
+        }
+      }
+
       // trees
       for (const t of trees) {
-        // trunk
-        drawMesh(cyl, makeModel(t.x, t.h*0.25, t.z, t.w, t.h*0.5, t.w), 0.32, 0.20, 0.10);
-        // foliage layers
+        drawMesh(cyl,  makeModel(t.x, t.h*0.25, t.z, t.w, t.h*0.5, t.w), 0.32, 0.20, 0.10);
         const gd = t.dark ? 0.06 : 0.09;
         drawMesh(cone, makeModel(t.x, t.h*0.55, t.z, t.w*4, t.h*0.6, t.w*4), 0.08, 0.22+gd, 0.06);
         drawMesh(cone, makeModel(t.x, t.h*0.72, t.z, t.w*3, t.h*0.5, t.w*3), 0.07, 0.20+gd, 0.05);
