@@ -97,6 +97,9 @@
       <div id="hunger-bar" style="width:100%;height:100%;background:#c8702a;transition:width 0.3s;"></div>
     </div>
   </div>
+  <div id="mate-badge" style="display:none;position:fixed;top:16px;left:20px;
+    color:#f5a0c0;font-family:Georgia,serif;font-size:16px;
+    text-shadow:1px 1px 4px #000;pointer-events:none;"></div>
   <div id="territory-warn" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);
     background:rgba(80,0,0,0.70);border:2px solid #c03030;border-radius:10px;
     padding:8px 24px;color:#ffccaa;font-family:Georgia,serif;font-size:18px;
@@ -474,10 +477,10 @@
         warning: '🌑 ShadowClan territory!',
         // patrol cats
         patrols: [
-          { x:52, z:52, yaw:0, r:0.10,g:0.10,b:0.12 },
-          { x:60, z:48, yaw:1, r:0.15,g:0.12,b:0.10 },
-          { x:48, z:60, yaw:2, r:0.12,g:0.10,b:0.14 },
-          { x:58, z:58, yaw:3, r:0.08,g:0.08,b:0.10 },
+          { name:'Blackstar', x:52, z:52, yaw:0, r:0.10,g:0.10,b:0.12 },
+          { name:'Tawnypelt', x:60, z:48, yaw:1, r:0.15,g:0.12,b:0.10 },
+          { name:'Russetfur', x:48, z:60, yaw:2, r:0.12,g:0.10,b:0.14 },
+          { name:'Stonefur',  x:58, z:58, yaw:3, r:0.08,g:0.08,b:0.10 },
         ],
       },
       {
@@ -487,10 +490,10 @@
         groundColor: [0.30, 0.28, 0.18],
         warning: '🌬️ WindClan territory!',
         patrols: [
-          { x: 0,  z:-62, yaw:0, r:0.75,g:0.68,b:0.48 },
-          { x: 8,  z:-68, yaw:2, r:0.65,g:0.60,b:0.40 },
-          { x:-8,  z:-58, yaw:4, r:0.80,g:0.72,b:0.52 },
-          { x: 4,  z:-72, yaw:1, r:0.70,g:0.62,b:0.42 },
+          { name:'Tallstar',   x: 0,  z:-62, yaw:0, r:0.75,g:0.68,b:0.48 },
+          { name:'Deadfoot',   x: 8,  z:-68, yaw:2, r:0.65,g:0.60,b:0.40 },
+          { name:'Mudclaw',    x:-8,  z:-58, yaw:4, r:0.80,g:0.72,b:0.52 },
+          { name:'Webfoot',    x: 4,  z:-72, yaw:1, r:0.70,g:0.62,b:0.42 },
         ],
       },
       {
@@ -500,10 +503,10 @@
         groundColor: [0.15, 0.22, 0.20],
         warning: '🏞️ RiverClan territory!',
         patrols: [
-          { x:-62, z: 0,  yaw:0, r:0.38,g:0.48,b:0.62 },
-          { x:-68, z: 8,  yaw:2, r:0.30,g:0.40,b:0.55 },
-          { x:-58, z:-8,  yaw:4, r:0.42,g:0.50,b:0.65 },
-          { x:-72, z: 4,  yaw:1, r:0.35,g:0.45,b:0.58 },
+          { name:'Crookedstar', x:-62, z: 0,  yaw:0, r:0.38,g:0.48,b:0.62 },
+          { name:'Silverstream',x:-68, z: 8,  yaw:2, r:0.30,g:0.40,b:0.55 },
+          { name:'Mistystar',   x:-58, z:-8,  yaw:4, r:0.42,g:0.50,b:0.65 },
+          { name:'Stonefur',    x:-72, z: 4,  yaw:1, r:0.35,g:0.45,b:0.58 },
         ],
       },
     ];
@@ -518,6 +521,7 @@
     }
 
     let currentTerritory = 'ThunderClan';
+    let mate = null; // the cat object who is your mate
 
     // ── prey ─────────────────────────────────────────────────────────────────
 
@@ -789,19 +793,66 @@
         if (!keys['h']) player._hPressed = false;
       }
 
+      // ── mate system ───────────────────────────────────────────────────────
+      // gather all cats into one list to find nearest
+      const allCats = [
+        ...clanmates,
+        ...enemyClans.flatMap(cl => cl.patrols),
+      ];
+      let nearCat = null, nearCatDist = 99;
+      for (const c of allCats) {
+        if (c === mate) continue;
+        const d = Math.hypot(player.x - c.x, player.z - c.z);
+        if (d < nearCatDist) { nearCatDist = d; nearCat = c; }
+      }
+      const canAskMate = nearCat && nearCatDist < 2.5 && !mate;
+      const canBreakUp = mate && Math.hypot(player.x - mate.x, player.z - mate.z) < 2.5;
+
+      if (keys['m'] && !player._mPressed) {
+        if (canAskMate) {
+          mate = nearCat;
+          // stop enemy patrol from chasing
+          if (mate.chasing !== undefined) mate.chasing = false;
+          document.getElementById('mate-badge').style.display = 'block';
+          document.getElementById('mate-badge').textContent = '❤️ Mate: ' + mate.name;
+          player._mPressed = true;
+        } else if (canBreakUp) {
+          mate = null;
+          document.getElementById('mate-badge').style.display = 'none';
+          player._mPressed = true;
+        }
+      }
+      if (!keys['m']) player._mPressed = false;
+
+      // mate slowly follows player
+      if (mate) {
+        const mdx = player.x - mate.x, mdz = player.z - mate.z;
+        const md = Math.hypot(mdx, mdz);
+        if (md > 2.5) {
+          mate.yaw = Math.atan2(mdx, mdz);
+          const ms = Math.min(2.5, md) * dt;
+          mate.x += Math.sin(mate.yaw) * ms;
+          mate.z += Math.cos(mate.yaw) * ms;
+        }
+      }
+
       // prompt text
       const prompt = document.getElementById('prey-prompt');
       if (playerRole === 'warrior') {
-        if      (canPounce)        { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
-        else if (canPickup)        { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
+        if      (canPounce)         { prompt.style.display='block'; prompt.textContent='🐾 Press SPACE to pounce!'; }
+        else if (canPickup)         { prompt.style.display='block'; prompt.textContent='🐾 Press F to pick up!'; }
         else if (carrying && atPile){ prompt.style.display='block'; prompt.textContent='🐾 Press F to add to pile!'; }
-        else if (canEat)           { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
-        else                       { prompt.style.display='none'; }
+        else if (canEat)            { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
+        else if (canAskMate)        { prompt.style.display='block'; prompt.textContent='❤️ Press M to ask ' + nearCat.name + ' to be your mate!'; }
+        else if (canBreakUp)        { prompt.style.display='block'; prompt.textContent='💔 Press M to leave ' + mate.name + '...'; }
+        else                        { prompt.style.display='none'; }
       } else {
-        if      (nearHerb && nearHerbDist < 2.0)                              { prompt.style.display='block'; prompt.textContent='🌿 Press F to gather ' + nearHerb.name + '!'; }
+        if      (nearHerb && nearHerbDist < 2.0)                                                      { prompt.style.display='block'; prompt.textContent='🌿 Press F to gather ' + nearHerb.name + '!'; }
         else if (nearClanmate && nearClanmateDist < 2.5 && herbCount > 0 && nearClanmate.health < 99) { prompt.style.display='block'; prompt.textContent='💚 Press H to heal ' + nearClanmate.name + '!'; }
-        else if (nearClanmate && nearClanmateDist < 2.5 && herbCount === 0)   { prompt.style.display='block'; prompt.textContent='🌿 Find more herbs first!'; }
-        else                                                                   { prompt.style.display='none'; }
+        else if (nearClanmate && nearClanmateDist < 2.5 && herbCount === 0)                           { prompt.style.display='block'; prompt.textContent='🌿 Find more herbs first!'; }
+        else if (canAskMate)        { prompt.style.display='block'; prompt.textContent='❤️ Press M to ask ' + nearCat.name + ' to be your mate!'; }
+        else if (canBreakUp)        { prompt.style.display='block'; prompt.textContent='💔 Press M to leave ' + mate.name + '...'; }
+        else                        { prompt.style.display='none'; }
       }
 
       // camera — just behind and above the cat
@@ -910,6 +961,18 @@
       }
 
       for (const c of clanmates) drawCat(c.x, 0, c.z, c.yaw, c.r, c.g, c.b);
+
+      // floating heart above mate
+      if (mate) {
+        const hx = mate.x, hz = mate.z;
+        const bob = Math.sin(ts * 0.003) * 0.08;
+        const hy = 1.10 + bob;
+        const pulse = 0.10 + Math.abs(Math.sin(ts * 0.004)) * 0.04;
+        // two round bumps + bottom point = heart shape
+        drawMesh(cyl, makeModel(hx-pulse*0.55, hy, hz, pulse, pulse*0.55, pulse), 0.92,0.15,0.28);
+        drawMesh(cyl, makeModel(hx+pulse*0.55, hy, hz, pulse, pulse*0.55, pulse), 0.92,0.15,0.28);
+        drawMesh(cone,makeModel(hx, hy-pulse*0.7, hz, pulse*1.5, pulse*0.9, pulse*1.5), 0.92,0.15,0.28);
+      }
 
       // ── enemy clan camps + patrols ────────────────────────────────────────
       for (const clan of enemyClans) {
