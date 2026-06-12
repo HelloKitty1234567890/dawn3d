@@ -556,7 +556,8 @@
       if (e.key.toLowerCase() === 'g' && carrying) {
         carrying.catchX = player.x; carrying.catchZ = player.z;
         carrying.x = player.x;     carrying.z = player.z;
-        carrying.respawnTimer = 9999; // stay dead until taken to pile
+        carrying.caught = true;
+        carrying.respawnTimer = 9999;
         carrying = null;
         document.getElementById('carry-badge').style.display = 'none';
       }
