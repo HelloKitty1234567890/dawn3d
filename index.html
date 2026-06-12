@@ -426,7 +426,9 @@
       const canPounce = nearPrey && nearDist < 2.5;
       if (canPounce && (keys['space'] || keys[' ']) && !player._pounced) {
         nearPrey.caught = true;
-        nearPrey.respawnTimer = 15;
+        nearPrey.catchX = nearPrey.x;
+        nearPrey.catchZ = nearPrey.z;
+        nearPrey.respawnTimer = 8;
         killCount++;
         document.getElementById('kills').textContent = 'Fresh-kill: ' + killCount;
         player._pounced = true;
@@ -504,21 +506,34 @@
 
       // ── prey animals ─────────────────────────────────────────────────────
       for (const p of prey) {
-        if (p.caught) continue;
-        const s = p.type === 'rabbit' ? 1.4 : 0.7;
+        const s  = p.type === 'rabbit' ? 1.4 : 0.7;
         const pr = p.type === 'rabbit' ? 0.62 : 0.32;
         const pg = p.type === 'rabbit' ? 0.55 : 0.28;
         const pb = p.type === 'rabbit' ? 0.45 : 0.20;
-        // body
-        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.12*s, 0,    0.28*s,0.14*s,0.45*s), pr,pg,pb);
-        // head
-        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.18*s, 0.25*s, 0.18*s,0.16*s,0.18*s), pr,pg,pb);
-        // ears (tall for rabbit, small for mouse)
-        const eh = p.type==='rabbit' ? 0.22*s : 0.08*s;
-        drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw,-0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
-        drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw, 0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
-        // tail
-        drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.14*s,-0.26*s, 0.06*s,0.06*s,0.06*s), 0.85,0.82,0.80);
+        const eh = p.type === 'rabbit' ? 0.22*s : 0.08*s;
+
+        if (p.caught) {
+          // upside down — back on ground, legs in the air
+          const cx = p.catchX, cz = p.catchZ;
+          const by = 0.07*s; // body centre height (half the body height)
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw, 0, 0, 0,       0.28*s,0.14*s,0.45*s), pr,pg,pb);
+          // legs sticking straight up
+          const ll = 0.13*s;
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw,-0.08*s, ll, 0.14*s, 0.05*s,ll,0.05*s), pr,pg,pb);
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw, 0.08*s, ll, 0.14*s, 0.05*s,ll,0.05*s), pr,pg,pb);
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw,-0.08*s, ll,-0.14*s, 0.05*s,ll,0.05*s), pr,pg,pb);
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw, 0.08*s, ll,-0.14*s, 0.05*s,ll,0.05*s), pr,pg,pb);
+          // head flopped to side
+          drawMesh(box,  makeModelR(cx,by,cz, p.yaw, 0.12*s, 0, 0.28*s, 0.18*s,0.12*s,0.16*s), pr,pg,pb);
+          // ears drooping down
+          drawMesh(cone, makeModelR(cx,by,cz, p.yaw, 0.06*s,-0.08*s, 0.28*s, 0.04*s,eh,0.04*s), pr,pg,pb);
+        } else {
+          drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.12*s, 0,      0.28*s,0.14*s,0.45*s), pr,pg,pb);
+          drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.18*s, 0.25*s, 0.18*s,0.16*s,0.18*s), pr,pg,pb);
+          drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw,-0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
+          drawMesh(cone, makeModelR(p.x,0,p.z, p.yaw, 0.05*s,0.30*s,0.25*s, 0.05*s,eh,0.05*s), pr,pg,pb);
+          drawMesh(box,  makeModelR(p.x,0,p.z, p.yaw, 0, 0.14*s,-0.26*s, 0.06*s,0.06*s,0.06*s), 0.85,0.82,0.80);
+        }
       }
 
       // trees
