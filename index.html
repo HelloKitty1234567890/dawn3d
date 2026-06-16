@@ -947,7 +947,13 @@
           babyTimer = null;
           const tWarn2 = document.getElementById('territory-warn');
           tWarn2.style.display = 'block';
-          tWarn2.textContent = '🐾 ' + name + ' was born!';
+          if (herbCount > 0) {
+            herbCount--;
+            document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
+            tWarn2.textContent = '🐾🌿 ' + name + ' was born safe and healthy, thanks to your herbs!';
+          } else {
+            tWarn2.textContent = '🐾 ' + name + ' was born!';
+          }
           setTimeout(() => { tWarn2.style.display = 'none'; }, 4000);
         }
       }
