@@ -475,6 +475,7 @@
         color: [0.12, 0.12, 0.14], // very dark
         groundColor: [0.10, 0.12, 0.08],
         warning: '🌑 ShadowClan territory!',
+        terrain: 'pines',
         // patrol cats
         patrols: [
           { name:'Blackstar', x:52, z:52, yaw:0, r:0.10,g:0.10,b:0.12 },
@@ -489,6 +490,7 @@
         color: [0.72, 0.65, 0.45], // sandy/pale
         groundColor: [0.30, 0.28, 0.18],
         warning: '🌬️ WindClan territory!',
+        terrain: 'moor',
         patrols: [
           { name:'Tallstar',   x: 0,  z:-62, yaw:0, r:0.75,g:0.68,b:0.48 },
           { name:'Deadfoot',   x: 8,  z:-68, yaw:2, r:0.65,g:0.60,b:0.40 },
@@ -502,6 +504,7 @@
         color: [0.35, 0.45, 0.60], // blue-gray
         groundColor: [0.15, 0.22, 0.20],
         warning: '🏞️ RiverClan territory!',
+        terrain: 'river',
         patrols: [
           { name:'Crookedstar', x:-62, z: 0,  yaw:0, r:0.38,g:0.48,b:0.62 },
           { name:'Silverstream',x:-68, z: 8,  yaw:2, r:0.30,g:0.40,b:0.55 },
@@ -1031,6 +1034,46 @@
           const a = (i/8)*Math.PI*2;
           const mx = cx + Math.cos(a)*22, mz = cz + Math.sin(a)*22;
           drawMesh(cyl, makeModel(mx, 0.5, mz, 0.08, 1.2, 0.08), cr+0.1,cg+0.1,cb+0.1);
+        }
+
+        // ── special look for each territory ──────────────────────────────
+        if (clan.terrain === 'pines') {
+          // tall dark pine trees scattered around ShadowClan
+          for (let i = 0; i < 18; i++) {
+            const a = (i/18)*Math.PI*2 + 0.3;
+            const dist = 12 + (i % 3) * 7;
+            const tx = cx + Math.cos(a)*dist, tz = cz + Math.sin(a)*dist;
+            drawMesh(cyl,  makeModel(tx, 1.6, tz, 0.18, 3.2, 0.18), 0.18,0.12,0.08);
+            drawMesh(cone, makeModel(tx, 4.2, tz, 1.1, 2.6, 1.1), 0.05,0.10,0.06);
+            drawMesh(cone, makeModel(tx, 3.0, tz, 1.4, 2.2, 1.4), 0.06,0.12,0.07);
+          }
+        } else if (clan.terrain === 'moor') {
+          // open windswept moor — rolling grass tufts, no trees
+          for (let i = 0; i < 30; i++) {
+            const a = (i/30)*Math.PI*2 + 0.5;
+            const dist = 10 + (i % 5) * 6;
+            const gx = cx + Math.cos(a)*dist, gz = cz + Math.sin(a)*dist;
+            drawMesh(box, makeModel(gx, -0.30, gz, 0.05, 0.35, 0.30), 0.55,0.50,0.30);
+            drawMesh(box, makeModel(gx, -0.30, gz, 0.30, 0.35, 0.05), 0.60,0.55,0.32);
+          }
+        } else if (clan.terrain === 'river') {
+          // a winding blue river through RiverClan territory
+          for (let i = -5; i <= 5; i++) {
+            const rx = cx + i*3.2, rz = cz + Math.sin(i*0.6)*5;
+            drawMesh(box, makeModel(rx, -0.38, rz, 4.0, 0.06, 6.0), 0.20,0.40,0.62);
+          }
+          // smooth stones along the bank
+          for (let i = 0; i < 10; i++) {
+            const a = (i/10)*Math.PI*2;
+            const sx = cx + Math.cos(a)*16, sz = cz + Math.sin(a)*16;
+            drawMesh(box, makeModel(sx, -0.30, sz, 0.6, 0.3, 0.6), 0.45,0.45,0.48);
+          }
+          // reeds near the water
+          for (let i = 0; i < 14; i++) {
+            const a = (i/14)*Math.PI*2 + 0.2;
+            const rx2 = cx + Math.cos(a)*10, rz2 = cz + Math.sin(a)*10;
+            drawMesh(cyl, makeModel(rx2, 0.0, rz2, 0.05, 1.0, 0.05), 0.25,0.40,0.18);
+          }
         }
 
         // patrol cats
