@@ -754,9 +754,16 @@
         p.x += Math.sin(p.yaw) * moveSpeed * dt;
         p.z += Math.cos(p.yaw) * moveSpeed * dt;
         // keep in bounds
-        const bound = 44;
-        if (Math.abs(p.x) > bound) p.x *= 0.98;
-        if (Math.abs(p.z) > bound) p.z *= 0.98;
+        if (p.isRat) {
+          // rats stay close to Twolegplace
+          const rdx = p.x - 0, rdz = p.z - 90;
+          const rdist = Math.hypot(rdx, rdz);
+          if (rdist > 20) { p.x -= rdx*0.02; p.z -= rdz*0.02; }
+        } else {
+          const bound = 44;
+          if (Math.abs(p.x) > bound) p.x *= 0.98;
+          if (Math.abs(p.z) > bound) p.z *= 0.98;
+        }
 
         if (dist < nearDist) { nearDist = dist; nearPrey = p; }
       }
