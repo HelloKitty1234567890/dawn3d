@@ -512,6 +512,21 @@
           { name:'Stonefur',    x:-72, z: 4,  yaw:1, r:0.35,g:0.45,b:0.58 },
         ],
       },
+      {
+        name: 'Twolegplace',
+        cx: 0, cz: 90,
+        color: [0.55, 0.45, 0.40], // scruffy brown
+        groundColor: [0.32, 0.30, 0.28], // pavement-grey
+        warning: '🏙️ Twolegplace — home of the rogues',
+        terrain: 'twolegplace',
+        hostile: false,
+        patrols: [
+          { name:'Scourge',  x:-4, z:88,  yaw:0, r:0.85,g:0.85,b:0.88 },
+          { name:'Bone',     x: 6, z:94,  yaw:2, r:0.30,g:0.28,b:0.26 },
+          { name:'Ruby',     x:-8, z:96,  yaw:4, r:0.60,g:0.35,b:0.30 },
+          { name:'Socks',    x: 4, z:84,  yaw:1, r:0.90,g:0.88,b:0.85 },
+        ],
+      },
     ];
 
     // initialise patrol AI state
@@ -616,7 +631,9 @@
       const tWarn = document.getElementById('territory-warn');
       if (inEnemyTerritory) {
         tWarn.style.display = 'block';
-        tWarn.textContent = inEnemyTerritory.warning + (player.crouching ? ' 🐾 stay crouched!' : ' ⚠️ they can see you!');
+        tWarn.textContent = inEnemyTerritory.hostile === false
+          ? inEnemyTerritory.warning
+          : inEnemyTerritory.warning + (player.crouching ? ' 🐾 stay crouched!' : ' ⚠️ they can see you!');
       } else {
         tWarn.style.display = 'none';
       }
@@ -625,6 +642,19 @@
       for (const clan of enemyClans) {
         for (const p of clan.patrols) {
           if (p === mate) continue; // mate follows player instead
+          if (clan.hostile === false) {
+            // rogues just wander peacefully, never chase or attack
+            p.wanderTimer -= dt;
+            if (p.wanderTimer <= 0) {
+              p.yaw += (Math.random() - 0.5) * Math.PI;
+              p.wanderTimer = 2 + Math.random() * 3;
+            }
+            p.x += Math.sin(p.yaw) * 1.2 * dt;
+            p.z += Math.cos(p.yaw) * 1.2 * dt;
+            const bDist = Math.hypot(p.x - p.baseX, p.z - p.baseZ);
+            if (bDist > 14) p.yaw = Math.atan2(p.baseX - p.x, p.baseZ - p.z);
+            continue;
+          }
           const pdx = player.x - p.x, pdz = player.z - p.z;
           const distToPlayer = Math.hypot(pdx, pdz);
           const canSee = distToPlayer < 10 && !player.crouching;
@@ -1014,6 +1044,7 @@
         // camp clearing
         drawMesh(box, makeModel(cx, -0.41, cz, 14, 0.08, 12), gr*1.3, gg*1.2, gb*1.1);
 
+        if (clan.terrain !== 'twolegplace') {
         // bramble walls (simple ring)
         for (let i = 0; i < 16; i++) {
           const a = (i/16)*Math.PI*2;
@@ -1028,6 +1059,7 @@
         // clan-coloured den
         drawMesh(box, makeModel(cx-5, 0.4, cz-2, 2.8,0.9,1.8), cr,cg,cb);
         drawMesh(box, makeModel(cx+5, 0.4, cz-2, 2.8,0.9,1.8), cr*0.8,cg*0.8,cb*0.8);
+        }
 
         // border markers — tall dark sticks
         for (let i = 0; i < 8; i++) {
@@ -1073,6 +1105,26 @@
             const a = (i/14)*Math.PI*2 + 0.2;
             const rx2 = cx + Math.cos(a)*10, rz2 = cz + Math.sin(a)*10;
             drawMesh(cyl, makeModel(rx2, 0.0, rz2, 0.05, 1.0, 0.05), 0.25,0.40,0.18);
+          }
+        } else if (clan.terrain === 'twolegplace') {
+          // scruffy back-alley town for the rogues — fences, bins, a shed
+          // wooden fence ring
+          for (let i = 0; i < 20; i++) {
+            const a = (i/20)*Math.PI*2;
+            const fx = cx + Math.cos(a)*18, fz = cz + Math.sin(a)*18;
+            drawMesh(box, makeModel(fx, 0.6, fz, 0.15, 1.4, 0.15), 0.40,0.30,0.20);
+          }
+          // an old shed / barn
+          drawMesh(box, makeModel(cx, 1.0, cz-8, 6, 2.2, 4), 0.45,0.38,0.30);
+          drawMesh(box, makeModel(cx, 2.5, cz-8, 6.4, 0.4, 4.4), 0.30,0.25,0.20);
+          // bins
+          drawMesh(cyl, makeModel(cx+4, 0.4, cz+2, 0.5, 0.9, 0.5), 0.25,0.45,0.25);
+          drawMesh(cyl, makeModel(cx-5, 0.4, cz+3, 0.5, 0.9, 0.5), 0.45,0.25,0.25);
+          // patches of pavement / concrete
+          for (let i = 0; i < 8; i++) {
+            const a = (i/8)*Math.PI*2 + 0.4;
+            const px = cx + Math.cos(a)*10, pz = cz + Math.sin(a)*10;
+            drawMesh(box, makeModel(px, -0.40, pz, 3.5, 0.06, 3.5), 0.50,0.50,0.50);
           }
         }
 
