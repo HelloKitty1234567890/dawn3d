@@ -947,15 +947,24 @@
           babyTimer = null;
           const tWarn2 = document.getElementById('territory-warn');
           tWarn2.style.display = 'block';
-          if (herbCount > 0) {
-            herbCount--;
-            document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
-            tWarn2.textContent = '🐾🌿 ' + name + ' was born safe and healthy, thanks to your herbs!';
-          } else {
-            tWarn2.textContent = '🐾 ' + name + ' was born!';
-          }
+          tWarn2.textContent = mate.gotHerbs
+            ? '🐾🌿 ' + name + ' was born safe and healthy, thanks to your herbs!'
+            : '🐾 ' + name + ' was born!';
+          mate.gotHerbs = false;
           setTimeout(() => { tWarn2.style.display = 'none'; }, 4000);
         }
+      }
+
+      // give herbs to your mate with H
+      if (mate && herbCount > 0) {
+        const mateDist = Math.hypot(player.x - mate.x, player.z - mate.z);
+        if (mateDist < 2.5 && keys['h'] && !player._hPressed) {
+          herbCount--;
+          mate.gotHerbs = true;
+          document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
+          player._hPressed = true;
+        }
+        if (!keys['h']) player._hPressed = false;
       }
 
       // mate slowly follows player
@@ -978,6 +987,7 @@
         else if (carrying && atPile){ prompt.style.display='block'; prompt.textContent='🐾 Press F to add to pile!'; }
         else if (carrying)          { prompt.style.display='block'; prompt.textContent='🐾 Press G to put prey down!'; }
         else if (canEat)            { prompt.style.display='block'; prompt.textContent='🍖 Press E to eat!'; }
+        else if (mate && herbCount > 0 && Math.hypot(player.x - mate.x, player.z - mate.z) < 2.5) { prompt.style.display='block'; prompt.textContent='🌿 Press H to give herbs to ' + mate.name + '!'; }
         else if (canAskMate)        { prompt.style.display='block'; prompt.textContent='❤️ Press M to ask ' + nearCat.name + ' to be your mate!'; }
         else if (canBreakUp)        { prompt.style.display='block'; prompt.textContent='💔 Press M to leave ' + mate.name + '...'; }
         else                        { prompt.style.display='none'; }
