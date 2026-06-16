@@ -463,6 +463,13 @@
       { name:'Brackenfur', x:-2,   z: 3,   yaw: Math.PI*0.9,r:0.55, g:0.40, b:0.18 }, // golden-brown
     ];
 
+    // kittens — playing in camp, only shown for warriors
+    const kittens = [
+      { name:'Cinderkit', x: 1,   z: 5,   yaw: 0.5, r:0.55, g:0.55, b:0.58, wanderTimer: 0 },
+      { name:'Mosskit',   x:-1.5, z: 5.5, yaw: 1.5, r:0.40, g:0.32, b:0.20, wanderTimer: 0 },
+      { name:'Spottedkit',x: 0,   z: 6,   yaw: 2.5, r:0.78, g:0.65, b:0.40, wanderTimer: 0 },
+    ];
+
     // give clanmates health so medicine cat can heal them
     for (const c of clanmates) c.health = 40 + Math.random() * 60;
 
@@ -841,6 +848,22 @@
       if (!keys['e']) player._ePressed = false;
 
 
+      // ── kittens wander around camp (warrior only) ────────────────────────
+      if (playerRole === 'warrior') {
+        for (const k of kittens) {
+          k.wanderTimer -= dt;
+          if (k.wanderTimer <= 0) {
+            k.yaw += (Math.random() - 0.5) * Math.PI;
+            k.wanderTimer = 1.5 + Math.random() * 2;
+          }
+          k.x += Math.sin(k.yaw) * 0.4 * dt;
+          k.z += Math.cos(k.yaw) * 0.4 * dt;
+          // stay close to camp
+          const kd = Math.hypot(k.x, k.z - 4);
+          if (kd > 4) k.yaw = Math.atan2(0 - k.x, 4 - k.z);
+        }
+      }
+
       // ── medicine cat: gather herbs + heal clanmates ──────────────────────
       let nearHerb = null, nearHerbDist = 99;
       let nearClanmate = null, nearClanmateDist = 99;
@@ -1050,6 +1073,11 @@
       }
 
       for (const c of clanmates) drawCat(c.x, 0, c.z, c.yaw, c.r, c.g, c.b);
+
+      // kittens playing in camp — only for warriors
+      if (playerRole === 'warrior') {
+        for (const k of kittens) drawCat(k.x, -0.13, k.z, k.yaw, k.r, k.g, k.b, 0, 0.12, 0.30, 0.20);
+      }
 
       // floating heart above mate
       if (mate) {
