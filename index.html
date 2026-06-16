@@ -1114,12 +1114,27 @@
             const fx = cx + Math.cos(a)*18, fz = cz + Math.sin(a)*18;
             drawMesh(box, makeModel(fx, 0.6, fz, 0.15, 1.4, 0.15), 0.40,0.30,0.20);
           }
-          // an old shed / barn
-          drawMesh(box, makeModel(cx, 1.0, cz-8, 6, 2.2, 4), 0.45,0.38,0.30);
-          drawMesh(box, makeModel(cx, 2.5, cz-8, 6.4, 0.4, 4.4), 0.30,0.25,0.20);
-          // bins
-          drawMesh(cyl, makeModel(cx+4, 0.4, cz+2, 0.5, 0.9, 0.5), 0.25,0.45,0.25);
-          drawMesh(cyl, makeModel(cx-5, 0.4, cz+3, 0.5, 0.9, 0.5), 0.45,0.25,0.25);
+          // rows of buildings with alleyways between them
+          const buildings = [
+            { bx: cx-12, bz: cz-8,  w:5, h:2.4, d:8, r:0.45,g:0.38,b:0.30 },
+            { bx: cx-5,  bz: cz-8,  w:4, h:3.0, d:8, r:0.50,g:0.42,b:0.34 },
+            { bx: cx+2,  bz: cz-8,  w:5, h:2.0, d:8, r:0.40,g:0.34,b:0.28 },
+            { bx: cx+9,  bz: cz-8,  w:4, h:2.7, d:8, r:0.48,g:0.40,b:0.32 },
+            { bx: cx-12, bz: cz+8,  w:5, h:2.2, d:7, r:0.42,g:0.36,b:0.30 },
+            { bx: cx-5,  bz: cz+8,  w:4, h:2.8, d:7, r:0.46,g:0.40,b:0.33 },
+            { bx: cx+2,  bz: cz+8,  w:5, h:2.4, d:7, r:0.38,g:0.32,b:0.27 },
+            { bx: cx+9,  bz: cz+8,  w:4, h:2.5, d:7, r:0.44,g:0.38,b:0.31 },
+          ];
+          for (const b of buildings) {
+            drawMesh(box, makeModel(b.bx, b.h/2, b.bz, b.w, b.h, b.d), b.r, b.g, b.b);
+            // flat roof, slightly overhanging
+            drawMesh(box, makeModel(b.bx, b.h+0.2, b.bz, b.w+0.4, 0.4, b.d+0.4), b.r*0.7, b.g*0.7, b.b*0.7);
+          }
+          // bins scattered in the alleys
+          drawMesh(cyl, makeModel(cx-8.5, 0.4, cz, 0.5, 0.9, 0.5), 0.25,0.45,0.25);
+          drawMesh(cyl, makeModel(cx-1.5, 0.4, cz, 0.5, 0.9, 0.5), 0.45,0.25,0.25);
+          drawMesh(cyl, makeModel(cx+5.5, 0.4, cz, 0.5, 0.9, 0.5), 0.30,0.30,0.45);
+          drawMesh(cyl, makeModel(cx+12, 0.4, cz, 0.5, 0.9, 0.5), 0.45,0.40,0.20);
           // patches of pavement / concrete
           for (let i = 0; i < 8; i++) {
             const a = (i/8)*Math.PI*2 + 0.4;
