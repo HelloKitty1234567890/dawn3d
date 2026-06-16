@@ -547,6 +547,8 @@
 
     let currentTerritory = 'ThunderClan';
     let mate = null; // the cat object who is your mate
+    let babyTimer = null; // counts down to a new kitten being born
+    const babyNames = ['Featherkit','Lionkit','Hollykit','Jaykit','Dovekit','Briarkit'];
 
     // ── prey ─────────────────────────────────────────────────────────────────
 
@@ -917,10 +919,12 @@
           if (mate.chasing !== undefined) mate.chasing = false;
           document.getElementById('mate-badge').style.display = 'block';
           document.getElementById('mate-badge').textContent = '❤️ Mate: ' + mate.name;
+          babyTimer = 30; // a kitten will be born after 30 seconds together
           player._mPressed = true;
         } else if (canBreakUp) {
           const exMate = mate;
           mate = null;
+          babyTimer = null;
           document.getElementById('mate-badge').style.display = 'none';
           // give ex-mate a long cooldown before they can chase
           if (exMate.chasing !== undefined) {
@@ -933,6 +937,20 @@
         }
       }
       if (!keys['m']) player._mPressed = false;
+
+      // ── kitten is born after enough time with a mate ─────────────────────
+      if (mate && babyTimer !== null) {
+        babyTimer -= dt;
+        if (babyTimer <= 0) {
+          const name = babyNames[Math.floor(Math.random() * babyNames.length)];
+          kittens.push({ name, x: player.x, z: player.z, yaw: 0, r: mate.r, g: mate.g, b: mate.b, wanderTimer: 0 });
+          babyTimer = null;
+          const tWarn2 = document.getElementById('territory-warn');
+          tWarn2.style.display = 'block';
+          tWarn2.textContent = '🐾 ' + name + ' was born!';
+          setTimeout(() => { tWarn2.style.display = 'none'; }, 4000);
+        }
+      }
 
       // mate slowly follows player
       if (mate) {
