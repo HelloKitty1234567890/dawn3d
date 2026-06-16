@@ -393,11 +393,12 @@
       });
     }
 
-    // mountains — tall stone peaks far out at the edge of the world
+    // mountains — tall stone peaks far out at the edge of the world,
+    // pushed past the clan camps so they never overlap them
     const mountains = [];
     for (let i = 0; i < 14; i++) {
       const angle = (i / 14) * Math.PI * 2 + RNG() * 0.2;
-      const dist  = 55 + RNG() * 15;
+      const dist  = 95 + RNG() * 15;
       mountains.push({
         x: Math.cos(angle) * dist, z: Math.sin(angle) * dist,
         h: 14 + RNG() * 10, w: 4 + RNG() * 3,
