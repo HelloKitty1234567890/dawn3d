@@ -595,6 +595,12 @@
         carrying = null;
         document.getElementById('carry-badge').style.display = 'none';
       }
+      if (e.key.toLowerCase() === 'g' && playerRole === 'medicine' && herbCount > 0) {
+        herbCount--;
+        const t = herbTypes[Math.floor(RNG() * herbTypes.length)];
+        herbs.push({ x: player.x, z: player.z, ...t, gathered: false, respawnTimer: 9999 });
+        document.getElementById('kills').textContent = 'Herbs: ' + herbCount;
+      }
     });
     document.addEventListener('keyup',   e => { keys[e.key.toLowerCase()] = false; keys[e.code.toLowerCase()] = false; });
 
@@ -934,6 +940,7 @@
         else if (nearClanmate && nearClanmateDist < 2.5 && herbCount === 0)                           { prompt.style.display='block'; prompt.textContent='🌿 Find more herbs first!'; }
         else if (canAskMate)        { prompt.style.display='block'; prompt.textContent='❤️ Press M to ask ' + nearCat.name + ' to be your mate!'; }
         else if (canBreakUp)        { prompt.style.display='block'; prompt.textContent='💔 Press M to leave ' + mate.name + '...'; }
+        else if (herbCount > 0)     { prompt.style.display='block'; prompt.textContent='🌿 Press G to put down a herb!'; }
         else                        { prompt.style.display='none'; }
       }
 
